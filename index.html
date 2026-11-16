@@ -13,7 +13,7 @@
 <!--/CONFIG-->
 <style>
 /* Layout idea: a quiet app shell around "engineering computation pad" problem cards,
-   two problems per page, each with a green-grid solution pad you write on. */
+   two problems per page, each with a white solution pad you write on. */
 :root {
   --paper: #ffffff;
   --desk: #eef1ee;
@@ -187,24 +187,27 @@ sup, sub { font-size: .72em; line-height: 0; }
 .pad-label b { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
 .pad-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .pad {
-  position: relative; border: 1px solid var(--grid-major); border-radius: 8px; overflow: hidden;
-  background-color: var(--pad);
-  background-image:
-    linear-gradient(var(--grid-major) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
-    linear-gradient(var(--grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
-  background-size: calc(var(--cell, 20px) * 5) calc(var(--cell, 20px) * 5), calc(var(--cell, 20px) * 5) calc(var(--cell, 20px) * 5), var(--cell, 20px) var(--cell, 20px), var(--cell, 20px) var(--cell, 20px);
+  position: relative; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden;
+  background: #ffffff;
   touch-action: pan-y pinch-zoom;
 }
 .pad.writing { touch-action: none; }
 .pad canvas { display: block; width: 100%; height: 100%; }
-.pad-hint { position: absolute; left: 12px; bottom: 10px; font-size: 13px; color: #6f8a66; pointer-events: none; }
+.pad-hint { position: absolute; left: 12px; bottom: 10px; font-size: 13px; color: #9aa3ae; pointer-events: none; }
 .typed summary { cursor: pointer; font-size: 14px; color: var(--muted); padding: 4px 0; }
 .typed textarea {
   width: 100%; min-height: 110px; resize: vertical; margin-top: 6px; padding: 10px 12px;
   border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); font-size: 16px; line-height: 1.5;
 }
+
+/* tools: size slider, selection bar */
+.size-ctl { height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px 0 4px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
+.size-dot-wrap { width: 30px; height: 30px; display: grid; place-items: center; flex: none; }
+.size-dot { display: block; border-radius: 50%; background: var(--ink); }
+.size-ctl input[type="range"] { width: 112px; accent-color: var(--accent); }
+.seg { display: inline-flex; gap: 6px; }
+.pad .fx { position: absolute; inset: 0; pointer-events: none; }
+.sel-bar { position: absolute; top: 8px; right: 8px; z-index: 3; display: flex; gap: 6px; }
 
 /* pager */
 .pager {
@@ -311,6 +314,10 @@ const ICON = {
   pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
   eraser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H8.5L3.6 15.1a2 2 0 010-2.8L13.3 2.6a2 2 0 012.8 0l4.3 4.3a2 2 0 010 2.8L11 19.2"/><path d="M6 11l7 7"/></svg>',
   hand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 00-4 0v5"/><path d="M14 10V4a2 2 0 00-4 0v6"/><path d="M10 10.5V6a2 2 0 00-4 0v8"/><path d="M18 8a2 2 0 014 0v6a8 8 0 01-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 012.8-2.8L7 15"/></svg>',
+  shape: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="9" height="9" rx="1"/><circle cx="16" cy="8" r="5"/></svg>',
+  select: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="13" height="13" rx="1.5" stroke-dasharray="3 3"/><path d="M12 12l9 3.5-4 1.5-1.5 4z"/></svg>',
+  boxsel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1" stroke-dasharray="3 3"/></svg>',
+  lasso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 19c-2-1.2-4-3.6-4-7 0-4.4 4-8 9-8s9 3.6 9 8-4 7-9 7c-1.6 0-3-.3-4.2-.8" stroke-dasharray="3 3"/><path d="M7 19c-.6 1.4-.3 2.4.8 2.6"/></svg>',
   logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
   people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.9"/><path d="M16 3.1a4 4 0 010 7.8"/></svg>',
   google: '<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
@@ -468,10 +475,26 @@ async function firebaseBackend() {
 }
 
 /* ---------- app state ---------- */
+function loadTool() {
+  try {
+    const t = JSON.parse(localStorage.getItem("mele-tool-v1") || "null") || {};
+    const out = {};
+    if (typeof t.color === "string" && /^#[0-9a-f]{6}$/i.test(t.color)) out.color = t.color;
+    if (t.penW >= 12 && t.penW <= 160) out.penW = t.penW;
+    if (t.eraserW >= 120 && t.eraserW <= 1600) out.eraserW = t.eraserW;
+    if (typeof t.finger === "boolean") out.finger = t.finger;
+    if (t.selMode === "rect" || t.selMode === "free") out.selMode = t.selMode;
+    return out;
+  } catch { return {}; }
+}
+function saveTool() {
+  try { const t = S.tool; localStorage.setItem("mele-tool-v1", JSON.stringify({ color: t.color, penW: t.penW, eraserW: t.eraserW, finger: t.finger, selMode: t.selMode })); } catch {}
+}
 const S = {
   backend: null, user: null, owner: false,
   exam: null, pages: [], pageIndex: 0,
-  tool: { kind: "pen", color: "#1b2430", finger: false },
+  tool: Object.assign({ kind: "pen", color: "#1b2430", penW: 44, eraserW: 400, finger: false, selMode: "rect" }, loadTool()),
+  hinted: {},
   pads: [],
 };
 const userKey = () => (S.user?.email || "anon").toLowerCase();
@@ -664,18 +687,49 @@ function pageLabel(p, i) {
 
 function toolButtons() {
   const t = S.tool;
-  const mk = (label, pressed, inner, onclick, extra = {}) =>
-    h("button", { class: "tool", type: "button", "aria-pressed": String(pressed), "aria-label": label, title: label, onclick, ...extra, html: inner });
-  const colors = [["Black ink", "#1b2430"], ["Blue ink", "#1f4fa8"], ["Red ink", "#b23b2a"]];
   const wrap = h("div", { class: "tools", role: "toolbar", "aria-label": "Writing tools" });
   const redraw = () => wrap.replaceWith(toolButtons());
+  const changed = () => { saveTool(); S.pads.forEach(p => p.toolChanged()); redraw(); };
+  const mk = (label, pressed, inner, onclick) =>
+    h("button", { class: "tool", type: "button", "aria-pressed": String(pressed), "aria-label": label, title: label, onclick, html: inner });
+  const colors = [["Black ink", "#1b2430"], ["Blue ink", "#1f4fa8"], ["Red ink", "#b23b2a"]];
   for (const [label, c] of colors) {
-    wrap.append(mk(label, t.kind === "pen" && t.color === c, `<span class="swatch" style="background:${c}"></span>`, () => { t.kind = "pen"; t.color = c; redraw(); }));
+    wrap.append(mk(label, t.color === c, `<span class="swatch" style="background:${c}"></span>`, () => {
+      t.color = c; if (t.kind === "eraser" || t.kind === "select") t.kind = "pen"; changed();
+    }));
   }
-  wrap.append(mk("Eraser", t.kind === "eraser", `${ICON.eraser}<span class="tool-label">Eraser</span>`, () => { t.kind = "eraser"; redraw(); }));
   wrap.append(h("span", { class: "tool-sep" }));
-  wrap.append(mk("Write with finger", t.finger, `${ICON.hand}<span>${t.finger ? "Finger writes" : "Finger scrolls"}</span>`, () => {
-    t.finger = !t.finger; S.pads.forEach(p => p.setFinger(t.finger)); redraw();
+  const hints = {
+    shape: "Draw a line, circle, triangle or rectangle. It snaps straight when you lift.",
+    select: "Drag a box (or draw around strokes with Freestyle) to select. Drag inside to move, drag the corner dot to resize.",
+  };
+  const kinds = [["pen", "Pen", ICON.pen], ["eraser", "Eraser", ICON.eraser], ["shape", "Shapes", ICON.shape], ["select", "Select", ICON.select]];
+  for (const [k, label, icon] of kinds) {
+    wrap.append(mk(label, t.kind === k, `${icon}<span class="tool-label">${label}</span>`, () => {
+      t.kind = k;
+      if (hints[k] && !S.hinted[k]) { S.hinted[k] = 1; toast(hints[k]); }
+      changed();
+    }));
+  }
+  if (t.kind === "select") {
+    const modes = [["rect", "Rectangle select", "Rectangle", ICON.boxsel], ["free", "Freestyle select", "Freestyle", ICON.lasso]];
+    const seg = h("span", { class: "seg", role: "group", "aria-label": "Selection shape" });
+    for (const [m, label, short, icon] of modes) {
+      seg.append(mk(label, t.selMode === m, `${icon}<span class="tool-label">${short}</span>`, () => { t.selMode = m; changed(); }));
+    }
+    wrap.append(seg);
+  } else {
+    const eraser = t.kind === "eraser", key = eraser ? "eraserW" : "penW";
+    const dot = h("span", { class: "size-dot" });
+    const upd = () => { const px = Math.max(3, Math.min(28, t[key] / 10000 * 600)); dot.style.width = dot.style.height = px + "px"; };
+    upd();
+    const range = h("input", { type: "range", id: "size-range", min: eraser ? 120 : 12, max: eraser ? 1600 : 160, step: eraser ? 20 : 2, value: String(t[key]), "aria-label": eraser ? "Eraser size" : "Pen size" });
+    range.addEventListener("input", () => { t[key] = Number(range.value); upd(); saveTool(); S.pads.forEach(p => p.fxDraw()); });
+    wrap.append(h("label", { class: "size-ctl" }, h("span", { class: "size-dot-wrap" }, dot), range));
+  }
+  wrap.append(h("span", { class: "tool-sep" }));
+  wrap.append(mk("Write with finger", t.finger, `${ICON.hand}<span class="tool-label">${t.finger ? "Finger writes" : "Finger scrolls"}</span>`, () => {
+    t.finger = !t.finger; S.pads.forEach(p => p.setFinger(t.finger)); saveTool(); redraw();
     toast(t.finger ? "Your finger now writes on the pads. Scroll outside the pads." : "Your finger scrolls. A stylus or mouse still writes.");
   }));
   return wrap;
@@ -714,6 +768,7 @@ function go(i) {
   S.pageIndex = i; renderExam();
 }
 document.addEventListener("keydown", e => {
+  if ((e.key === "Delete" || e.key === "Backspace") && !inEditable(e.target)) { const p = S.pads.find(x => x.sel); if (p) { e.preventDefault(); p.deleteSel(); return; } }
   if (!S.exam || !document.querySelector(".pager") || inEditable(e.target) || e.target.tagName === "SELECT") return;
   if (e.key === "ArrowRight") go(S.pageIndex + 1);
   if (e.key === "ArrowLeft") go(S.pageIndex - 1);
@@ -757,6 +812,7 @@ function problemCard(ex, q) {
   const hint = h("span", { class: "pad-hint" }, "Write your solution here");
   padEl.append(hint);
   const undo = h("button", { class: "btn small", type: "button" }, "Undo");
+  const redo = h("button", { class: "btn small", type: "button" }, "Redo");
   const more = h("button", { class: "btn small", type: "button" }, "More space");
   const clear = h("button", { class: "btn small danger", type: "button" }, "Clear");
   const ta = h("textarea", { id: `typed-${q.section.replace(/\W+/g, "-")}-${q.num}`, placeholder: "Type your solution or notes" });
@@ -769,14 +825,15 @@ function problemCard(ex, q) {
     h("div", { class: `choices${long ? " long" : ""}` }, ...choiceBtns),
     h("div", { class: "answer-row" }, revealBtn, answerTag, verdict),
     h("div", { class: "pad-wrap" },
-      h("div", { class: "pad-label" }, h("b", {}, "Solution"), h("span", { class: "pad-actions" }, undo, more, clear)),
+      h("div", { class: "pad-label" }, h("b", {}, "Solution"), h("span", { class: "pad-actions" }, undo, redo, more, clear)),
       padEl, typed));
 
   const pad = new Pad(padEl, () => work, () => { hint.classList.toggle("hidden", work.strokes.length > 0); save(); });
   S.pads.push(pad);
-  undo.addEventListener("click", () => { work.strokes.pop(); pad.redraw(); hint.classList.toggle("hidden", work.strokes.length > 0); save(); });
+  undo.addEventListener("click", () => pad.undo());
+  redo.addEventListener("click", () => pad.redo());
   more.addEventListener("click", () => { work.h = Math.min(3, +(work.h + 0.4).toFixed(2)); pad.resize(true); save(); toast("Added more writing space"); });
-  armed(clear, "Clear", async () => { work.strokes = []; work.h = 0.75; pad.resize(true); hint.classList.remove("hidden"); save(); });
+  armed(clear, "Clear", async () => { pad.clearAll(); work.h = 0.75; pad.resize(true); hint.classList.remove("hidden"); save(); });
   let tt;
   ta.addEventListener("input", () => { work.text = ta.value; clearTimeout(tt); tt = setTimeout(save, 400); });
 
@@ -791,18 +848,160 @@ function problemCard(ex, q) {
   return card;
 }
 
+/* ---------- geometry helpers (units: 1/10000 of the pad width) ---------- */
+const hyp = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
+function segDist(px, py, ax, ay, bx, by) {
+  const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+  let t = l2 ? ((px - ax) * dx + (py - ay) * dy) / l2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return hyp(px, py, ax + t * dx, ay + t * dy);
+}
+function pathLen(p) { let L = 0; for (let i = 2; i < p.length; i += 2) L += hyp(p[i - 2], p[i - 1], p[i], p[i + 1]); return L; }
+function bboxOf(p) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i < p.length; i += 2) { x0 = Math.min(x0, p[i]); x1 = Math.max(x1, p[i]); y0 = Math.min(y0, p[i + 1]); y1 = Math.max(y1, p[i + 1]); }
+  return { x0, y0, x1, y1 };
+}
+function densify(p, step) {
+  const o = [p[0], p[1]];
+  for (let i = 2; i < p.length; i += 2) {
+    const px = p[i - 2], py = p[i - 1], dx = p[i] - px, dy = p[i + 1] - py, d = Math.hypot(dx, dy);
+    if (d > step) { const k = Math.ceil(d / step); for (let j = 1; j < k; j++) o.push(px + dx * j / k, py + dy * j / k); }
+    o.push(p[i], p[i + 1]);
+  }
+  return o;
+}
+function pip(x, y, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 2; i < poly.length; j = i, i += 2) {
+    const xi = poly[i], yi = poly[i + 1], xj = poly[j], yj = poly[j + 1];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/* ---------- shape recognition ----------
+   Takes a hand-drawn stroke and returns a clean line, ellipse, triangle or
+   rectangle, or null when the stroke doesn't look like one. */
+function dp(pts, tol) {
+  if (pts.length < 3) return pts.slice();
+  const a = pts[0], b = pts[pts.length - 1];
+  let md = -1, mi = -1;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const d = segDist(pts[i][0], pts[i][1], a[0], a[1], b[0], b[1]);
+    if (d > md) { md = d; mi = i; }
+  }
+  if (md > tol) return dp(pts.slice(0, mi + 1), tol).slice(0, -1).concat(dp(pts.slice(mi), tol));
+  return [a, b];
+}
+function turnAngle(a, b, c) {
+  const ux = b[0] - a[0], uy = b[1] - a[1], vx = c[0] - b[0], vy = c[1] - b[1];
+  const lu = Math.hypot(ux, uy), lv = Math.hypot(vx, vy);
+  if (!lu || !lv) return 0;
+  return Math.acos(Math.max(-1, Math.min(1, (ux * vx + uy * vy) / (lu * lv)))) * 180 / Math.PI;
+}
+function cleanPoly(v, diag) {
+  let changed = true;
+  while (changed && v.length > 3) {
+    changed = false;
+    for (let i = 0; i < v.length; i++) {
+      const prev = v[(i + v.length - 1) % v.length], cur = v[i], next = v[(i + 1) % v.length];
+      if (turnAngle(prev, cur, next) < 22 || hyp(cur[0], cur[1], prev[0], prev[1]) < 0.08 * diag) { v.splice(i, 1); changed = true; break; }
+    }
+  }
+  return v;
+}
+function recognizeShape(p) {
+  const n = p.length / 2;
+  if (n < 6) return null;
+  const L = pathLen(p), bb = bboxOf(p);
+  const w = bb.x1 - bb.x0, h = bb.y1 - bb.y0, diag = Math.hypot(w, h);
+  if (L < 500 || diag < 350) return null;
+  const sx = p[0], sy = p[1], ex = p[p.length - 2], ey = p[p.length - 1];
+  const gap = hyp(sx, sy, ex, ey);
+  if (gap > 0.2 * L) {
+    // open stroke: only a straight line qualifies
+    let dev = 0;
+    for (let i = 0; i < n; i++) dev = Math.max(dev, segDist(p[2 * i], p[2 * i + 1], sx, sy, ex, ey));
+    if (dev < 0.06 * gap && L < 1.2 * gap) return { kind: "line", p: [sx, sy, ex, ey] };
+    return null;
+  }
+  // closed stroke: ellipse first, then polygons
+  const cx = (bb.x0 + bb.x1) / 2, cy = (bb.y0 + bb.y1) / 2, a = w / 2, b = h / 2;
+  if (a > 80 && b > 80) {
+    let sum = 0;
+    for (let i = 0; i < n; i++) sum += Math.abs(Math.hypot((p[2 * i] - cx) / a, (p[2 * i + 1] - cy) / b) - 1);
+    if (sum / n < 0.09) {
+      let rx = a, ry = b;
+      if (Math.abs(a - b) < 0.15 * Math.max(a, b)) rx = ry = (a + b) / 2;
+      const o = [];
+      for (let i = 0; i <= 72; i++) { const t = i / 72 * Math.PI * 2; o.push(cx + rx * Math.cos(t), cy + ry * Math.sin(t)); }
+      return { kind: rx === ry ? "circle" : "ellipse", p: o };
+    }
+  }
+  const pts = [];
+  for (let i = 0; i < n; i++) pts.push([p[2 * i], p[2 * i + 1]]);
+  let mi = 0, md = -1;
+  for (let i = 1; i < pts.length; i++) { const d = hyp(pts[i][0], pts[i][1], pts[0][0], pts[0][1]); if (d > md) { md = d; mi = i; } }
+  const left = dp(pts.slice(0, mi + 1), 0.05 * diag), right = dp(pts.slice(mi).concat([pts[0]]), 0.05 * diag);
+  const verts = cleanPoly(left.slice(0, -1).concat(right.slice(0, -1)), diag);
+  const close = v => { const o = []; for (const q of v) o.push(q[0], q[1]); o.push(v[0][0], v[0][1]); return o; };
+  if (verts.length === 3) return { kind: "triangle", p: close(verts) };
+  if (verts.length === 4) {
+    const rightAngles = verts.every((c, i) => {
+      const pr = verts[(i + 3) % 4], nx = verts[(i + 1) % 4];
+      const u = [pr[0] - c[0], pr[1] - c[1]], v = [nx[0] - c[0], nx[1] - c[1]];
+      const ang = Math.acos(Math.max(-1, Math.min(1, (u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v))))) * 180 / Math.PI;
+      return Math.abs(ang - 90) < 25;
+    });
+    if (rightAngles) {
+      const aligned = verts.every((c, i) => {
+        const nx = verts[(i + 1) % 4];
+        const ang = Math.abs(Math.atan2(nx[1] - c[1], nx[0] - c[0]) * 180 / Math.PI) % 90;
+        return Math.min(ang, 90 - ang) < 14;
+      });
+      if (aligned) {
+        const vb = bboxOf(verts.flat());
+        return { kind: "rectangle", p: [vb.x0, vb.y0, vb.x1, vb.y0, vb.x1, vb.y1, vb.x0, vb.y1, vb.x0, vb.y0] };
+      }
+    }
+    return { kind: rightAngles ? "rectangle" : "quadrilateral", p: close(verts) };
+  }
+  return null;
+}
+window.__shapeTest = { recognizeShape };
+
 /* ---------- drawing pad ----------
-   Strokes are stored in units of 1/10000 of the pad width, so they keep their
-   shape on any screen size. Pen and mouse always write; a finger writes only
-   when "Finger writes" is on (so you can scroll on phones). */
+   Strokes are lists of points in units of 1/10000 of the pad width, so they keep
+   their shape on any screen. Every change makes a new strokes array (never edits
+   the old one), which is what makes undo and redo cheap.
+   Tools: pen, eraser (cuts strokes apart), shapes (snaps on lift), select (lasso). */
+const bbCache = new WeakMap();
+function strokeBB(s) {
+  let b = bbCache.get(s);
+  if (!b) { const r = bboxOf(s.p), e = s.w / 2; b = { x0: r.x0 - e, y0: r.y0 - e, x1: r.x1 + e, y1: r.y1 + e }; bbCache.set(s, b); }
+  return b;
+}
 class Pad {
   constructor(el, getWork, onChange) {
     this.el = el; this.getWork = getWork; this.onChange = onChange;
     this.canvas = document.createElement("canvas");
+    this.fx = document.createElement("canvas");
+    this.fx.className = "fx";
     el.prepend(this.canvas);
+    el.append(this.fx);
     this.ctx = this.canvas.getContext("2d");
-    this.w = 0; this.active = null; this.lastPen = 0;
+    this.fctx = this.fx.getContext("2d");
+    this.allBtn = h("button", { class: "btn small", type: "button", onclick: () => this.selectAll() }, "Select all");
+    this.delBtn = h("button", { class: "btn small danger", type: "button", onclick: () => this.deleteSel() }, "Delete");
+    this.doneBtn = h("button", { class: "btn small", type: "button", onclick: () => this.clearSel() }, "Done");
+    this.bar = h("div", { class: "sel-bar hidden" }, this.allBtn, this.delBtn, this.doneBtn);
+    el.append(this.bar);
+    this.w = 0; this.op = null; this.lastPen = 0;
+    this.hist = []; this.redoStack = [];
+    this.sel = null; this.tf = null; this.hover = null;
     this.setFinger(S.tool.finger);
+    this.toolChanged();
     this.ro = new ResizeObserver(() => this.resize());
     this.ro.observe(el);
     const c = this.canvas;
@@ -810,6 +1009,7 @@ class Pad {
     c.addEventListener("pointermove", e => this.move(e));
     c.addEventListener("pointerup", e => this.up(e));
     c.addEventListener("pointercancel", e => this.up(e));
+    c.addEventListener("pointerleave", e => { if (!this.op && e.pointerType !== "touch") { this.hover = null; this.fxDraw(); } });
     // iPad: stop Apple Pencil from scrolling the page while writing.
     const stopStylus = e => {
       const t = [...e.touches];
@@ -820,16 +1020,35 @@ class Pad {
   }
   destroy() { this.ro.disconnect(); }
   setFinger(on) { this.el.classList.toggle("writing", !!on); }
+  updateBar() {
+    const on = S.tool.kind === "select", has = !!this.sel;
+    this.bar.classList.toggle("hidden", !on && !has);
+    this.allBtn.classList.toggle("hidden", has);
+    this.delBtn.classList.toggle("hidden", !has);
+    this.doneBtn.classList.toggle("hidden", !has);
+  }
+  selectAll() {
+    const list = this.getWork().strokes.filter(s => s.k !== "e");
+    if (!list.length) { toast("Nothing to select yet."); return; }
+    this.setSel(list); this.redraw();
+  }
+  toolChanged() {
+    if (S.tool.kind !== "select") this.clearSel(true);
+    this.updateBar();
+    this.hover = null;
+    this.canvas.style.cursor = { eraser: "none", select: "default" }[S.tool.kind] || "crosshair";
+    this.redraw();
+  }
+
+  /* --- sizing and drawing --- */
   resize(force) {
     const w = Math.round(this.el.clientWidth);
     if (!w || (!force && w === this.w)) return;
     this.w = w;
-    const work = this.getWork();
-    const hgt = Math.round(w * work.h);
+    const hgt = Math.round(w * this.getWork().h);
     const dpr = Math.min(window.devicePixelRatio || 1, 3);
     this.el.style.height = hgt + "px";
-    this.el.style.setProperty("--cell", (w / 30).toFixed(2) + "px");
-    this.canvas.width = Math.round(w * dpr); this.canvas.height = Math.round(hgt * dpr);
+    for (const c of [this.canvas, this.fx]) { c.width = Math.round(w * dpr); c.height = Math.round(hgt * dpr); }
     this.dpr = dpr;
     this.redraw();
   }
@@ -837,13 +1056,15 @@ class Pad {
     const { ctx, canvas } = this;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const s of this.getWork().strokes) this.drawStroke(s);
+    const sel = this.sel, tf = this.tf;
+    for (const s of this.getWork().strokes) this.drawStroke(sel && tf && sel.items.has(s) ? this.xf(s, tf) : s);
+    this.fxDraw();
   }
   style(s) {
     const { ctx } = this;
     const k = this.w * this.dpr / 10000;
     ctx.setTransform(k, 0, 0, k, 0, 0);
-    ctx.globalCompositeOperation = s.k === "e" ? "destination-out" : "source-over";
+    ctx.globalCompositeOperation = s.k === "e" ? "destination-out" : "source-over"; // k "e": strokes saved by the first version
     ctx.strokeStyle = s.c || "#1b2430";
     ctx.fillStyle = s.c || "#1b2430";
     ctx.lineWidth = s.w; ctx.lineCap = "round"; ctx.lineJoin = "round";
@@ -855,6 +1076,7 @@ class Pad {
     const { ctx } = this;
     if (n === 1) { ctx.beginPath(); ctx.arc(p[0], p[1], s.w / 2, 0, Math.PI * 2); ctx.fill(); return; }
     ctx.beginPath(); ctx.moveTo(p[0], p[1]);
+    if (s.f) { for (let i = 1; i < n; i++) ctx.lineTo(p[2 * i], p[2 * i + 1]); ctx.stroke(); return; }
     for (let i = 1; i < n - 1; i++) {
       const mx = (p[2 * i] + p[2 * i + 2]) / 2, my = (p[2 * i + 1] + p[2 * i + 3]) / 2;
       ctx.quadraticCurveTo(p[2 * i], p[2 * i + 1], mx, my);
@@ -862,7 +1084,7 @@ class Pad {
     ctx.lineTo(p[2 * n - 2], p[2 * n - 1]);
     ctx.stroke();
   }
-  // incremental drawing of the newest segment
+  // incremental drawing of the newest segment while writing
   drawTail(s) {
     const p = s.p, n = p.length / 2;
     this.style(s);
@@ -878,37 +1100,258 @@ class Pad {
     const r = this.canvas.getBoundingClientRect();
     return [Math.round((e.clientX - r.left) / this.w * 10000), Math.round((e.clientY - r.top) / this.w * 10000)];
   }
+  xf(s, tf) {
+    const p = s.p.map((v, i) => i % 2 === 0 ? tf.ax + (v - tf.ax) * tf.sc + tf.dx : tf.ay + (v - tf.ay) * tf.sc + tf.dy);
+    return Object.assign({}, s, { p });
+  }
+
+  /* --- overlay: lasso, selection box, eraser ring --- */
+  selBox() {
+    if (!this.sel) return null;
+    const upp = 10000 / this.w, e = 6 * upp, b = this.sel.bb, tf = this.tf;
+    let { x0, y0, x1, y1 } = b;
+    if (tf) {
+      x0 = tf.ax + (x0 - tf.ax) * tf.sc + tf.dx; x1 = tf.ax + (x1 - tf.ax) * tf.sc + tf.dx;
+      y0 = tf.ay + (y0 - tf.ay) * tf.sc + tf.dy; y1 = tf.ay + (y1 - tf.ay) * tf.sc + tf.dy;
+    }
+    return { x0: x0 - e, y0: y0 - e, x1: x1 + e, y1: y1 + e };
+  }
+  fxDraw() {
+    const c = this.fctx;
+    if (!this.fx.width) return;
+    c.setTransform(1, 0, 0, 1, 0, 0);
+    c.clearRect(0, 0, this.fx.width, this.fx.height);
+    const k = this.w * this.dpr / 10000, upp = 10000 / this.w;
+    c.setTransform(k, 0, 0, k, 0, 0);
+    const op = this.op;
+    if (op && op.type === "lasso" && op.path.length >= 4) {
+      c.beginPath(); c.moveTo(op.path[0], op.path[1]);
+      for (let i = 2; i < op.path.length; i += 2) c.lineTo(op.path[i], op.path[i + 1]);
+      c.closePath();
+      c.fillStyle = "rgba(36,92,69,.08)"; c.fill();
+      c.strokeStyle = "#245c45"; c.lineWidth = 2 * upp; c.setLineDash([7 * upp, 5 * upp]); c.stroke(); c.setLineDash([]);
+    }
+    const box = this.selBox();
+    if (box) {
+      c.strokeStyle = "#245c45"; c.lineWidth = 1.5 * upp; c.setLineDash([6 * upp, 4 * upp]);
+      c.strokeRect(box.x0, box.y0, box.x1 - box.x0, box.y1 - box.y0); c.setLineDash([]);
+      c.beginPath(); c.arc(box.x1, box.y1, 9 * upp, 0, Math.PI * 2);
+      c.fillStyle = "#fff"; c.fill(); c.lineWidth = 2 * upp; c.stroke();
+    }
+    if (this.hover && (S.tool.kind === "eraser" || (op && op.type === "erase"))) {
+      c.beginPath(); c.arc(this.hover[0], this.hover[1], S.tool.eraserW / 2, 0, Math.PI * 2);
+      c.fillStyle = "rgba(27,36,48,.06)"; c.fill();
+      c.strokeStyle = "rgba(27,36,48,.55)"; c.lineWidth = 1.5 * upp; c.stroke();
+    }
+  }
+
+  /* --- history --- */
+  pushHist(arr) { this.hist.push(arr); if (this.hist.length > 60) this.hist.shift(); this.redoStack = []; }
+  undo() {
+    const w = this.getWork();
+    let prev;
+    if (this.hist.length) prev = this.hist.pop();
+    else if (w.strokes.length) prev = w.strokes.slice(0, -1); // after a reload there is no history, so remove the last stroke
+    else return;
+    this.redoStack.push(w.strokes); w.strokes = prev;
+    this.clearSel(true); this.redraw(); this.onChange();
+  }
+  redo() {
+    if (!this.redoStack.length) return;
+    const w = this.getWork();
+    this.hist.push(w.strokes); w.strokes = this.redoStack.pop();
+    this.clearSel(true); this.redraw(); this.onChange();
+  }
+  clearAll() {
+    const w = this.getWork();
+    if (w.strokes.length) this.pushHist(w.strokes);
+    w.strokes = []; this.clearSel(true); this.redraw(); this.onChange();
+  }
+
+  /* --- pointer handling --- */
   down(e) {
     if (e.pointerType === "pen") this.lastPen = Date.now();
     if (e.pointerType === "touch" && (!S.tool.finger || Date.now() - this.lastPen < 1500)) return; // scroll / palm
-    if ((e.button > 0 && e.button !== 5) || this.active) return;
+    if ((e.button > 0 && e.button !== 5) || this.op) return;
     e.preventDefault();
     try { this.canvas.setPointerCapture(e.pointerId); } catch {}
-    const eraser = S.tool.kind === "eraser" || e.button === 5 || (e.buttons & 32);
-    this.active = { id: e.pointerId, s: { k: eraser ? "e" : "p", c: eraser ? null : S.tool.color, w: eraser ? 260 : 36, p: this.pt(e) } };
-    this.drawStroke(this.active.s);
+    const pt = this.pt(e), id = e.pointerId;
+    const kind = (e.button === 5 || (e.buttons & 32)) ? "eraser" : S.tool.kind; // pen eraser end
+    if (kind === "pen" || kind === "shape") {
+      this.op = { type: "draw", id, shape: kind === "shape", s: { k: "p", c: S.tool.color, w: S.tool.penW, p: pt.slice() } };
+      this.drawStroke(this.op.s);
+    } else if (kind === "eraser") {
+      this.op = { type: "erase", id, last: pt, pushed: false };
+      this.hover = pt;
+      this.eraseTo(pt, pt);
+      this.fxDraw();
+    } else {
+      this.startSelect(e, pt, id);
+    }
   }
   move(e) {
     if (e.pointerType === "pen") this.lastPen = Date.now();
-    if (!this.active || e.pointerId !== this.active.id) return;
+    const op = this.op;
+    if (!op) {
+      if (S.tool.kind === "eraser" && e.pointerType !== "touch") { this.hover = this.pt(e); this.fxDraw(); }
+      return;
+    }
+    if (e.pointerId !== op.id) return;
     e.preventDefault();
     const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-    const s = this.active.s;
     for (const ev of (evs.length ? evs : [e])) {
-      const [x, y] = this.pt(ev);
-      const n = s.p.length;
-      if (Math.abs(x - s.p[n - 2]) + Math.abs(y - s.p[n - 1]) < 8) continue;
-      s.p.push(x, y);
-      this.drawTail(s);
+      const pt = this.pt(ev);
+      if (op.type === "draw") {
+        const s = op.s, n = s.p.length;
+        if (Math.abs(pt[0] - s.p[n - 2]) + Math.abs(pt[1] - s.p[n - 1]) < 8) continue;
+        s.p.push(pt[0], pt[1]);
+        this.drawTail(s);
+      } else if (op.type === "erase") {
+        this.eraseTo(op.last, pt); op.last = pt; this.hover = pt;
+      } else if (op.type === "lasso" && op.rect) {
+        const [sx, sy] = op.start;
+        op.path = [sx, sy, pt[0], sy, pt[0], pt[1], sx, pt[1]];
+      } else if (op.type === "lasso") {
+        const n = op.path.length;
+        if (Math.abs(pt[0] - op.path[n - 2]) + Math.abs(pt[1] - op.path[n - 1]) >= 12) op.path.push(pt[0], pt[1]);
+      } else if (op.type === "move") {
+        const b = this.sel.bb, H = 10000 * this.getWork().h;
+        const dx = Math.max(-b.x0, Math.min(10000 - b.x1, pt[0] - op.start[0]));
+        const dy = Math.max(-b.y0, Math.min(H - b.y1, pt[1] - op.start[1]));
+        this.tf = { ax: 0, ay: 0, sc: 1, dx, dy };
+      } else if (op.type === "scale") {
+        const b = this.sel.bb, tf0 = this.tf, H = 10000 * this.getWork().h;
+        const d0 = Math.max(hyp(op.start[0], op.start[1], tf0.ax, tf0.ay), 1);
+        let sc = hyp(pt[0], pt[1], tf0.ax, tf0.ay) / d0;
+        sc = Math.max(0.15, Math.min(6, sc, (10000 - tf0.ax) / Math.max(b.x1 - tf0.ax, 1), (H - tf0.ay) / Math.max(b.y1 - tf0.ay, 1)));
+        this.tf = { ax: tf0.ax, ay: tf0.ay, sc, dx: 0, dy: 0 };
+      }
     }
+    if (op.type === "move" || op.type === "scale") this.redraw(); else this.fxDraw();
   }
   up(e) {
-    if (!this.active || e.pointerId !== this.active.id) return;
-    const s = this.active.s;
-    this.active = null;
-    this.getWork().strokes.push(s);
+    const op = this.op;
+    if (!op || e.pointerId !== op.id) return;
+    this.op = null;
+    const w = this.getWork();
+    if (op.type === "draw") {
+      let s = op.s;
+      if (op.shape) { const r = recognizeShape(s.p); if (r) s = Object.assign({}, s, { p: r.p, f: 1 }); }
+      this.pushHist(w.strokes);
+      w.strokes = w.strokes.concat([s]);
+      this.redraw(); this.onChange();
+    } else if (op.type === "erase") {
+      if (e.pointerType === "touch") this.hover = null;
+      this.fxDraw();
+      if (op.pushed) this.onChange();
+    } else if (op.type === "lasso") {
+      this.finishLasso(op);
+    } else if (op.type === "move" || op.type === "scale") {
+      this.commitTransform();
+    }
+  }
+
+  /* --- eraser: cuts strokes apart where the eraser touches them --- */
+  eraseTo(a, b) {
+    const R = S.tool.eraserW / 2;
+    const n = Math.max(1, Math.ceil(hyp(a[0], a[1], b[0], b[1]) / (R / 2)));
+    const centers = [];
+    for (let i = 1; i <= n; i++) centers.push([a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n]);
+    if (n === 1) centers[0] = b;
+    const w = this.getWork(), before = w.strokes, out = [];
+    let changed = false;
+    for (const s of before) {
+      if (s.k === "e") { out.push(s); continue; }
+      const bb = strokeBB(s);
+      if (!centers.some(c => c[0] > bb.x0 - R && c[0] < bb.x1 + R && c[1] > bb.y0 - R && c[1] < bb.y1 + R)) { out.push(s); continue; }
+      const pts = densify(s.p, Math.max(R / 6, 12)), reach = R + s.w / 2;
+      const gone = [];
+      let hit = false;
+      for (let i = 0; i < pts.length; i += 2) {
+        let near = false;
+        for (const c of centers) if (hyp(pts[i], pts[i + 1], c[0], c[1]) < reach) { near = true; break; }
+        gone.push(near); if (near) hit = true;
+      }
+      if (!hit) { out.push(s); continue; }
+      changed = true;
+      let run = [];
+      const flush = () => { if (run.length >= 4) out.push(Object.assign({}, s, { p: run })); run = []; };
+      for (let i = 0; i < gone.length; i++) { if (gone[i]) flush(); else run.push(pts[2 * i], pts[2 * i + 1]); }
+      flush();
+    }
+    if (!changed) return;
+    if (!this.op.pushed) { this.pushHist(before); this.op.pushed = true; }
+    w.strokes = out;
     this.redraw();
-    this.onChange();
+  }
+
+  /* --- select: lasso, move, resize, delete --- */
+  startSelect(e, pt, id) {
+    const upp = 10000 / this.w, tol = (e.pointerType === "touch" ? 30 : 18) * upp;
+    if (this.sel) {
+      const box = this.selBox(), b = this.sel.bb;
+      if (hyp(pt[0], pt[1], box.x1, box.y1) < tol) { this.op = { type: "scale", id, start: pt }; this.tf = { ax: b.x0, ay: b.y0, sc: 1, dx: 0, dy: 0 }; return; }
+      if (pt[0] >= box.x0 && pt[0] <= box.x1 && pt[1] >= box.y0 && pt[1] <= box.y1) { this.op = { type: "move", id, start: pt }; this.tf = { ax: 0, ay: 0, sc: 1, dx: 0, dy: 0 }; return; }
+      this.clearSel(true);
+    }
+    this.op = { type: "lasso", id, path: [pt[0], pt[1]], rect: S.tool.selMode !== "free", start: pt };
+    this.fxDraw();
+  }
+  finishLasso(op) {
+    const upp = 10000 / this.w, strokes = this.getWork().strokes.filter(s => s.k !== "e");
+    let chosen = [];
+    if (pathLen(op.path) < 14 * upp) {
+      // a tap: pick the stroke under the finger
+      const x = op.path[0], y = op.path[1];
+      let best = null, bd = 18 * upp;
+      for (const s of strokes) {
+        const p = s.p;
+        let d = p.length === 2 ? hyp(x, y, p[0], p[1]) : Infinity;
+        for (let i = 2; i < p.length; i += 2) d = Math.min(d, segDist(x, y, p[i - 2], p[i - 1], p[i], p[i + 1]));
+        d -= s.w / 2;
+        if (d < bd) { bd = d; best = s; }
+      }
+      if (best) chosen = [best];
+    } else {
+      for (const s of strokes) {
+        const pts = densify(s.p, 150);
+        let inside = 0;
+        for (let i = 0; i < pts.length; i += 2) if (pip(pts[i], pts[i + 1], op.path)) inside++;
+        if (inside / (pts.length / 2) >= 0.6) chosen.push(s);
+      }
+    }
+    this.setSel(chosen);
+    this.redraw();
+  }
+  setSel(list) {
+    if (!list.length) { this.sel = null; this.updateBar(); return; }
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const s of list) { const b = strokeBB(s); x0 = Math.min(x0, b.x0); y0 = Math.min(y0, b.y0); x1 = Math.max(x1, b.x1); y1 = Math.max(y1, b.y1); }
+    this.sel = { items: new Set(list), bb: { x0, y0, x1, y1 } };
+    this.updateBar();
+  }
+  commitTransform() {
+    const tf = this.tf, w = this.getWork();
+    this.tf = null;
+    if (!this.sel || (tf.sc === 1 && !tf.dx && !tf.dy)) { this.redraw(); return; }
+    const moved = [];
+    const next = w.strokes.map(s => { if (!this.sel.items.has(s)) return s; const t = this.xf(s, tf); moved.push(t); return t; });
+    this.pushHist(w.strokes);
+    w.strokes = next;
+    this.setSel(moved);
+    this.redraw(); this.onChange();
+  }
+  deleteSel() {
+    if (!this.sel) return;
+    const w = this.getWork(), items = this.sel.items;
+    this.pushHist(w.strokes);
+    w.strokes = w.strokes.filter(s => !items.has(s));
+    this.clearSel(true); this.redraw(); this.onChange();
+  }
+  clearSel(quiet) {
+    this.sel = null; this.tf = null;
+    this.updateBar();
+    if (!quiet) this.redraw();
   }
 }
 
