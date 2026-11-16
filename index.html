@@ -200,6 +200,111 @@ sup, sub { font-size: .72em; line-height: 0; }
   border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); font-size: 16px; line-height: 1.5;
 }
 
+/* home: search, subjects, sources, progress */
+.search { position: relative; }
+.search input {
+  width: 100%; height: 48px; padding: 0 46px 0 44px; border: 1px solid var(--rule); border-radius: 10px;
+  background: var(--paper); font-size: 16px; -webkit-appearance: none; appearance: none;
+}
+.search input::-webkit-search-cancel-button { display: none; }
+.search-icon { position: absolute; left: 13px; top: 13px; width: 22px; height: 22px; color: var(--muted); pointer-events: none; }
+.search-icon svg { width: 22px; height: 22px; }
+.search-clear { position: absolute; right: 4px; top: 4px; }
+.browse, .results { display: grid; gap: 18px; }
+.results { gap: 10px; }
+.subject-tabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.subject-tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: none; display: inline-flex; align-items: baseline; gap: 8px; padding: 9px 16px; min-height: 42px;
+  border-radius: 999px; border: 1px solid var(--rule); background: var(--paper); font-weight: 600; font-size: 15px;
+}
+.tab .mono { font-size: 12px; color: var(--muted); font-weight: 500; }
+.tab[aria-selected="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.tab[aria-selected="true"] .mono { color: #c9d1da; }
+.summary { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 16px 18px; display: grid; gap: 12px; }
+.summary-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.summary-head h3 { font-size: 18px; line-height: 1.3; margin-top: 2px; }
+.source-group { display: grid; gap: 10px; }
+.source-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--rule); padding-bottom: 6px; }
+.source-head .mono { font-size: 13px; }
+.source-toggle {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px;
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 10px;
+}
+.seg-btn {
+  min-height: 40px; padding: 6px 4px; border: 0; border-radius: 7px; background: transparent;
+  display: inline-flex; align-items: baseline; justify-content: center; gap: 5px; font-size: 14px; font-weight: 600; color: var(--muted);
+  white-space: nowrap;
+}
+.seg-btn .mono { font-size: 12px; font-weight: 500; }
+.seg-btn:hover { background: var(--desk); }
+.seg-btn[aria-selected="true"] { background: var(--accent); color: #fff; }
+.seg-btn[aria-selected="true"] .mono { color: #d3e6dc; }
+.source-sum-text { flex: 1; min-width: 0; display: grid; gap: 6px; }
+.source-sum-text b { font-size: 15px; }
+.source-sum { align-items: flex-end; }
+.source-sum .pbar { background: #dbe2dc; }
+
+.pview { display: grid; gap: 6px; }
+.pbar { display: flex; height: 8px; border-radius: 4px; background: var(--desk); overflow: hidden; }
+.pbar i { display: block; height: 100%; }
+.p-right { background: var(--good); }
+.p-wrong { background: var(--bad); }
+.p-done { background: #8d98a5; }
+.ptext { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ptext b { color: var(--ink); font-weight: 600; }
+.t-right { color: var(--good); }
+.t-wrong { color: var(--bad); }
+.exam-card { position: relative; }
+.exam-open { all: unset; cursor: pointer; display: block; }
+.exam-open::after { content: ""; position: absolute; inset: 0; border-radius: inherit; }
+.exam-open:focus-visible::after { outline: 2px solid var(--accent); outline-offset: 2px; }
+.on-top { position: relative; z-index: 1; }
+.card-foot, .source-sum { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.card-foot .pview, .source-sum .pview { flex: 1; min-width: 0; }
+.card-foot .btn, .source-sum .btn { flex: none; }
+.result {
+  text-align: left; width: 100%; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 12px 14px; display: grid; gap: 4px;
+}
+.result:hover { border-color: var(--grid-major); }
+.result-where { font-size: 13px; color: var(--muted); }
+.result-where b { color: var(--ink); font-family: var(--font-mono); }
+.result-text { font-size: 15px; line-height: 1.5; }
+mark { background: #ffe9a8; color: inherit; border-radius: 2px; padding: 0 1px; }
+.exam-progress { max-width: 860px; margin: 10px auto 0; padding: 0 16px; }
+.problem.flash { box-shadow: 0 0 0 3px var(--accent); }
+@media (prefers-reduced-motion: no-preference) { .problem { transition: box-shadow .6s; } }
+
+/* clear progress */
+.ctree { display: grid; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--paper); }
+.ct-row { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-top: 1px solid var(--rule); cursor: pointer; min-height: 48px; }
+.ct-row:first-child { border-top: 0; }
+.ct-row input, .opt-row input { width: 20px; height: 20px; flex: none; accent-color: var(--accent); }
+.ct-row .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ct-row[data-depth="0"] { font-weight: 600; }
+.ct-row[data-depth="1"] { padding-left: 38px; }
+.ct-row[data-depth="2"] { padding-left: 62px; }
+.ct-row[data-depth="3"] { padding-left: 86px; color: var(--muted); }
+.ct-all { background: var(--desk); }
+.ct-count { font-size: 13px; color: var(--muted); flex: none; }
+.opt-row { display: flex; gap: 12px; align-items: flex-start; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; cursor: pointer; }
+.opt-row input { margin-top: 2px; }
+.clear-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.admin-exam { display: grid; gap: 8px; padding: 12px; border-top: 1px solid var(--rule); }
+.admin-exam:first-child { border-top: 0; }
+.admin-exam-top { display: flex; gap: 10px; align-items: flex-start; }
+.admin-exam-top .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.admin-exam-top small { display: block; color: var(--muted); }
+.admin-exam-sel { display: flex; gap: 8px; flex-wrap: wrap; }
+.admin-exam-sel label { display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
+.admin-exam-sel select { height: 38px; min-width: 120px; border-radius: 8px; border: 1px solid var(--rule); background: var(--paper); padding: 0 8px; font-size: 15px; color: var(--ink); }
+@media (max-width: 560px) {
+  .ct-row[data-depth="1"] { padding-left: 30px; }
+  .ct-row[data-depth="2"] { padding-left: 46px; }
+  .ct-row[data-depth="3"] { padding-left: 62px; }
+}
+
 /* tools: size slider, selection bar */
 .size-ctl { height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px 0 4px; border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); }
 .size-dot-wrap { width: 30px; height: 30px; display: grid; place-items: center; flex: none; }
@@ -348,6 +453,7 @@ function setWatermark(text) {
 /* ---------- local storage of each person's work (IndexedDB, falls back to memory) ---------- */
 const store = (() => {
   const mem = new Map();
+  const gone = new Set();
   let dbp = null;
   try {
     dbp = new Promise((res, rej) => {
@@ -367,20 +473,31 @@ const store = (() => {
       t.onerror = () => rej(t.error);
     }).catch(() => null);
   }
+  const range = prefix => IDBKeyRange.bound(prefix, prefix + "￿");
   return {
     async get(key) {
       if (mem.has(key)) return mem.get(key);
+      if (gone.has(key)) return null;
       const v = await tx("readonly", s => s.get(key));
       if (v !== undefined && v !== null) mem.set(key, v);
       return v ?? null;
     },
-    async set(key, val) { mem.set(key, val); await tx("readwrite", s => s.put(val, key)); },
-    async keys(prefix) {
-      const range = IDBKeyRange.bound(prefix, prefix + "￿");
-      const ks = await tx("readonly", s => s.getAllKeys(range));
-      const all = new Set(ks || []);
-      for (const k of mem.keys()) if (k.startsWith(prefix)) all.add(k);
-      return [...all];
+    async set(key, val) { gone.delete(key); mem.set(key, val); await tx("readwrite", s => s.put(val, key)); },
+    async keys(prefix) { return (await this.getAll(prefix)).map(([k]) => k); },
+    // every [key, value] whose key starts with prefix
+    async getAll(prefix) {
+      const [ks, vs] = await Promise.all([
+        tx("readonly", s => s.getAllKeys(range(prefix))),
+        tx("readonly", s => s.getAll(range(prefix))),
+      ]);
+      const out = new Map();
+      (ks || []).forEach((k, i) => { if (!gone.has(k)) out.set(k, vs[i]); });
+      for (const [k, v] of mem) if (k.startsWith(prefix)) out.set(k, v);
+      return [...out];
+    },
+    async del(keys) {
+      for (const k of keys) { mem.delete(k); gone.add(k); }
+      await tx("readwrite", s => { for (const k of keys) s.delete(k); });
     },
   };
 })();
@@ -390,7 +507,7 @@ function previewBackend() {
   return {
     mode: "preview",
     async start(onState) { onState({ user: { email: "preview", name: "Preview" }, allowed: true, owner: false }); },
-    async listExams() { return [{ id: PREVIEW.id, title: PREVIEW.title, subtitle: PREVIEW.subtitle, sections: PREVIEW.sections, count: PREVIEW.questions.length }]; },
+    async listExams() { return [{ id: PREVIEW.id, title: PREVIEW.title, subtitle: PREVIEW.subtitle, subject: PREVIEW.subject, source: PREVIEW.source, sections: PREVIEW.sections, count: PREVIEW.questions.length }]; },
     async loadExam() { return PREVIEW; },
   };
 }
@@ -461,11 +578,14 @@ async function firebaseBackend() {
     removeAllowed: email => fs.deleteDoc(fs.doc(db, "allowed", email)),
     async importExam(x) {
       const meta = { title: x.title, subtitle: x.subtitle || "", sections: x.sections, count: x.questions.length, updatedAt: fs.serverTimestamp() };
+      if (SUBJECTS.some(s => s.id === x.subject)) meta.subject = x.subject;
+      if (SOURCES.includes(x.source)) meta.source = x.source;
       const b = fs.writeBatch(db);
-      b.set(fs.doc(db, "exams", x.id), meta);
+      b.set(fs.doc(db, "exams", x.id), meta, { merge: true });
       b.set(fs.doc(db, "examContent", x.id), { questions: x.questions });
       await b.commit();
     },
+    updateExamMeta: (id, data) => fs.setDoc(fs.doc(db, "exams", id), data, { merge: true }),
     async deleteExam(id) {
       const b = fs.writeBatch(db);
       b.delete(fs.doc(db, "exams", id)); b.delete(fs.doc(db, "examContent", id));
@@ -554,39 +674,322 @@ function topbar({ title, sub, onBack, right = [] }) {
   return h("header", { class: "topbar" }, row);
 }
 
+/* ---------- subjects, sources and progress ---------- */
+const SUBJECTS = [
+  { id: "PIPE", name: "Power & Industrial Plant Engineering" },
+  { id: "MD", name: "Machine Design, Materials & Shop Practice" },
+  { id: "MESL", name: "Math, Engineering Economics & Basic Sciences" },
+];
+const SOURCES = ["Prime", "Alcorcon", "Estoque", "Others"];
+const UNSORTED = { id: "UNSORTED", name: "Not sorted yet" };
+const subjOf = ex => (SUBJECTS.some(s => s.id === ex.subject) ? ex.subject : UNSORTED.id);
+const srcOf = ex => (SOURCES.includes(ex.source) ? ex.source : "Others");
+const subjInfo = id => SUBJECTS.find(s => s.id === id) || UNSORTED;
+const byTitle = (a, b) => a.title.localeCompare(b.title, undefined, { numeric: true });
+
+const isDone = w => !!(w && (w.choice || w.revealed));
+function emptyTally() { return { done: 0, right: 0, wrong: 0 }; }
+function addTally(t, w) {
+  if (!isDone(w)) return;
+  t.done++;
+  if (w.ok === true) t.right++;
+  else if (w.ok === false) t.wrong++;
+}
+function sumTally(...ts) {
+  const o = emptyTally();
+  for (const t of ts) { o.done += t.done; o.right += t.right; o.wrong += t.wrong; }
+  return o;
+}
+// Progress of one problem set, overall and per section, from this device's saved work.
+async function examProgress(ex) {
+  const prefix = `${userKey()}|${ex.id}|`;
+  const all = emptyTally(), bySec = {};
+  for (const [k, w] of await store.getAll(prefix)) {
+    if (k.endsWith("|~meta")) continue;
+    const rest = k.slice(prefix.length), sec = rest.slice(0, rest.lastIndexOf("#"));
+    addTally(all, w);
+    addTally(bySec[sec] || (bySec[sec] = emptyTally()), w);
+  }
+  return { all, bySec };
+}
+function progressView(t, total) {
+  const pct = n => (total ? Math.min(100, (n / total) * 100) : 0).toFixed(2) + "%";
+  const unchecked = Math.max(0, t.done - t.right - t.wrong);
+  const label = `${t.done} of ${total} done` + (t.right || t.wrong ? ` · ${t.right} right · ${t.wrong} wrong` : "");
+  const bar = h("span", { class: "pbar", role: "img", "aria-label": label },
+    h("i", { class: "p-right", style: `width:${pct(t.right)}` }),
+    h("i", { class: "p-wrong", style: `width:${pct(t.wrong)}` }),
+    h("i", { class: "p-done", style: `width:${pct(unchecked)}` }));
+  const text = h("span", { class: "ptext" },
+    h("b", {}, `${t.done}/${total}`), " done",
+    t.right || t.wrong ? [" · ", h("span", { class: "t-right" }, `${t.right} right`), " · ", h("span", { class: "t-wrong" }, `${t.wrong} wrong`)] : null);
+  return h("div", { class: "pview" }, bar, text);
+}
+
+/* ---------- home ---------- */
+const ICON_SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+function getPref(k, d) { try { return localStorage.getItem(k) ?? d; } catch { return d; } }
+function setPref(k, v) { try { localStorage.setItem(k, v); } catch {} }
+
 async function homeScreen() {
   setWatermark(S.backend.mode === "preview" ? "PREVIEW" : S.user.email);
   const right = [];
   if (S.owner) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Manage access and exams", title: "Manage", html: ICON.people, onclick: adminScreen }));
   if (S.backend.signOut) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Sign out", title: "Sign out", html: ICON.logout, onclick: () => S.backend.signOut() }));
-  const list = h("div", { class: "exam-list" }, h("p", { class: "muted" }, "Loading…"));
   const banner = S.backend.mode === "preview"
     ? h("div", { class: "banner" }, h("b", {}, "Preview. "), "This copy opens without sign-in so you can try it. In the real app, people sign in with Google and only the emails you add can open it.")
     : null;
+
+  const q = h("input", { type: "search", id: "search", placeholder: "Search problems, topics or sets", autocomplete: "off", autocapitalize: "off", spellcheck: "false", enterkeyhint: "search", "aria-label": "Search" });
+  const clearQ = h("button", { class: "icon-btn search-clear hidden", type: "button", "aria-label": "Clear search", html: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>' });
+  const searchBox = h("div", { class: "search" }, h("span", { class: "search-icon", html: ICON_SEARCH }), q, clearQ);
+  const browse = h("div", { class: "browse" }, h("p", { class: "muted" }, "Loading…"));
+  const results = h("div", { class: "results hidden", "aria-live": "polite" });
+
   screen(topbar({ title: "MELE Problem Sets", sub: S.backend.mode === "preview" ? "Preview" : S.user.email, right }),
-    h("main", { class: "home" }, banner, h("h2", {}, "Problem sets"), list));
+    h("main", { class: "home" }, banner, searchBox, results, browse));
+
+  let exams, prog;
   try {
-    const exams = await S.backend.listExams();
-    if (!exams.length) {
-      list.replaceChildren(h("p", { class: "empty" }, S.owner ? "No problem sets yet. Tap the people icon, then import an exam file." : "No problem sets have been added yet."));
-      return;
-    }
-    const cards = await Promise.all(exams.map(async ex => {
-      const done = (await store.keys(`${userKey()}|${ex.id}|`)).filter(k => !k.endsWith("~meta")).length;
-      const pct = ex.count ? Math.min(100, Math.round(done / ex.count * 100)) : 0;
-      return h("button", { class: "exam-card", type: "button", onclick: () => openExam(ex.id) },
-        h("span", { class: "qsec" }, ex.subtitle || ""),
-        h("h3", {}, ex.title),
-        h("span", { class: "exam-meta" },
-          h("span", { class: "mono" }, `${ex.count} problems`),
-          h("span", {}, (ex.sections || []).map(s => s.name).join(" · ")),
-          h("span", { class: "mono" }, `${done} worked on`)),
-        h("span", { class: "progress", "aria-hidden": "true" }, h("i", { style: `width:${pct}%` })));
-    }));
-    list.replaceChildren(...cards);
+    exams = (await S.backend.listExams()).sort(byTitle);
+    prog = new Map(await Promise.all(exams.map(async ex => [ex.id, await examProgress(ex)])));
   } catch (e) {
-    list.replaceChildren(h("div", { class: "err-box" }, "Couldn't load the problem sets. Check your connection and reload."));
+    browse.replaceChildren(h("div", { class: "err-box" }, "Couldn't load the problem sets. Check your connection and reload."));
+    return;
   }
+  S.examList = exams;
+  if (!exams.length) {
+    browse.replaceChildren(h("p", { class: "empty" }, S.owner ? "No problem sets yet. Tap the people icon, then import an exam file." : "No problem sets have been added yet."));
+    searchBox.classList.add("hidden");
+    return;
+  }
+
+  // subject tabs
+  const tabs = SUBJECTS.slice();
+  if (exams.some(ex => subjOf(ex) === UNSORTED.id)) tabs.push(UNSORTED);
+  let current = getPref("mele-subject", "");
+  if (!tabs.some(t => t.id === current)) current = (tabs.find(t => exams.some(ex => subjOf(ex) === t.id)) || tabs[0]).id;
+
+  function examCard(ex) {
+    const p = prog.get(ex.id);
+    return h("div", { class: "exam-card" },
+      h("button", { class: "exam-open", type: "button", onclick: () => openExam(ex.id) }, h("h3", {}, ex.title)),
+      h("span", { class: "exam-meta" },
+        h("span", { class: "mono" }, `${ex.count} problems`),
+        h("span", {}, (ex.sections || []).map(s => s.name).join(" · "))),
+      h("div", { class: "card-foot" }, progressView(p.all, ex.count),
+        h("button", { class: "btn small on-top", type: "button", "aria-label": `Clear progress of ${ex.title}`, onclick: () => clearScreen(exams, prog, { examId: ex.id }) }, "Clear progress")));
+  }
+
+  function renderBrowse() {
+    const info = subjInfo(current);
+    const inSubj = exams.filter(ex => subjOf(ex) === current);
+    const tabRow = h("div", { class: "subject-tabs", role: "tablist", "aria-label": "Subjects" },
+      ...tabs.map(t => {
+        const n = exams.filter(ex => subjOf(ex) === t.id).length;
+        return h("button", { class: "tab", type: "button", role: "tab", "aria-selected": String(t.id === current), title: t.name,
+          onclick: () => { current = t.id; setPref("mele-subject", current); renderBrowse(); } },
+          t.id === UNSORTED.id ? "Unsorted" : t.id, h("span", { class: "mono" }, String(n)));
+      }));
+    const total = inSubj.reduce((a, ex) => a + (ex.count || 0), 0);
+    const tally = sumTally(...inSubj.map(ex => prog.get(ex.id).all));
+    const summary = h("section", { class: "summary" },
+      h("div", { class: "summary-head" },
+        h("div", {}, h("div", { class: "brand" }, current === UNSORTED.id ? "Unsorted" : current), h("h3", {}, info.name)),
+        inSubj.length ? h("button", { class: "btn small", type: "button", "aria-label": `Clear progress of ${current}`, onclick: () => clearScreen(exams, prog, { subject: current }) }, "Clear progress") : null),
+      inSubj.length ? progressView(tally, total) : h("p", { class: "muted", style: "margin:0" }, "No problem sets in this subject yet."),
+      current === UNSORTED.id && S.owner ? h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Set the subject and source of these in Manage (people icon).") : null);
+    // source toggle: one source at a time, remembered per subject
+    const countIn = src => inSubj.filter(ex => srcOf(ex) === src).length;
+    let src = getPref(`mele-source-${current}`, "");
+    if (!SOURCES.includes(src)) src = SOURCES.find(x => countIn(x)) || SOURCES[0];
+    const srcRow = h("div", { class: "source-toggle", role: "tablist", "aria-label": "Sources" },
+      ...SOURCES.map(x => h("button", { class: "seg-btn", type: "button", role: "tab", "aria-selected": String(x === src),
+        onclick: () => { setPref(`mele-source-${current}`, x); renderBrowse(); } },
+        h("span", {}, x), h("span", { class: "mono" }, String(countIn(x))))));
+    const list = inSubj.filter(ex => srcOf(ex) === src);
+    const stotal = list.reduce((a, ex) => a + (ex.count || 0), 0);
+    const stally = sumTally(...list.map(ex => prog.get(ex.id).all));
+    const group = h("section", { class: "source-group" },
+      list.length ? h("div", { class: "source-sum" },
+        h("div", { class: "source-sum-text" }, h("div", {}, h("b", {}, src), h("span", { class: "muted mono" }, ` · ${list.length} ${list.length === 1 ? "set" : "sets"}`)), progressView(stally, stotal)),
+        h("button", { class: "btn small", type: "button", "aria-label": `Clear progress of ${src}`, onclick: () => clearScreen(exams, prog, { subject: current, source: src }) }, "Clear progress"))
+        : h("p", { class: "empty" }, `No ${src === "Others" ? "other" : src} problem sets in ${current === UNSORTED.id ? "Unsorted" : current} yet.`),
+      list.length ? h("div", { class: "exam-list" }, ...list.map(examCard)) : null);
+    browse.replaceChildren(tabRow, summary, inSubj.length ? srcRow : null, inSubj.length ? group : null);
+  }
+  renderBrowse();
+
+  // search
+  let timer, seq = 0;
+  async function runSearch() {
+    const text = q.value.trim();
+    clearQ.classList.toggle("hidden", !text);
+    if (!text) { results.classList.add("hidden"); browse.classList.remove("hidden"); return; }
+    browse.classList.add("hidden"); results.classList.remove("hidden");
+    const my = ++seq;
+    if (!S.contentCache) S.contentCache = new Map();
+    const missing = exams.filter(ex => !S.contentCache.has(ex.id));
+    if (missing.length) {
+      results.replaceChildren(h("p", { class: "muted" }, "Searching…"));
+      await Promise.all(missing.map(async ex => { try { S.contentCache.set(ex.id, await S.backend.loadExam(ex.id)); } catch {} }));
+      if (my !== seq) return;
+    }
+    renderResults(text);
+  }
+  function renderResults(text) {
+    const tokens = norm(text).split(" ").filter(Boolean);
+    const has = s => { const n = norm(s); return tokens.every(t => n.includes(t)); };
+    const setHits = exams.filter(ex => has([ex.title, ex.subtitle, subjOf(ex), subjInfo(subjOf(ex)).name, srcOf(ex), ...(ex.sections || []).map(s => s.name)].join(" ")));
+    const probHits = [];
+    for (const ex of exams) {
+      const full = S.contentCache.get(ex.id);
+      if (!full) continue;
+      for (const qq of full.questions) {
+        const hay = [qq.text, ...(qq.notes || []), ...qq.choices.map((c, i) => `${"ABCD"[i]}. ${c}`)].join("  ");
+        if (has(hay)) probHits.push({ ex, q: qq, hay });
+      }
+    }
+    const out = [];
+    if (setHits.length) out.push(h("h2", {}, "Problem sets"), h("div", { class: "exam-list" }, ...setHits.map(examCard)));
+    const LIMIT = 60;
+    out.push(h("h2", {}, probHits.length ? `Problems (${probHits.length})` : "Problems"));
+    if (!probHits.length) out.push(h("p", { class: "empty" }, "No problems match. Try fewer or different words."));
+    for (const { ex, q: qq, hay } of probHits.slice(0, LIMIT)) {
+      out.push(h("button", { class: "result", type: "button", onclick: () => openExam(ex.id, { section: qq.section, num: qq.num }) },
+        h("span", { class: "result-where" }, `${subjOf(ex) === UNSORTED.id ? "Unsorted" : subjOf(ex)} · ${srcOf(ex)} · ${ex.title} · ${qq.section} `, h("b", {}, `#${qq.num}`)),
+        h("span", { class: "result-text", html: snippet(plain(hay), tokens) })));
+    }
+    if (probHits.length > LIMIT) out.push(h("p", { class: "muted" }, `Showing the first ${LIMIT}. Add more words to narrow it down.`));
+    results.replaceChildren(...out);
+  }
+  q.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(runSearch, 160); });
+  clearQ.addEventListener("click", () => { q.value = ""; runSearch(); q.focus(); });
+}
+
+function norm(s) { return plain(String(s)).toLowerCase().replace(/[–—]/g, "-").replace(/\s+/g, " ").trim(); }
+// Short excerpt around the first match, with every match marked.
+function snippet(text, tokens) {
+  const low = text.toLowerCase();
+  let first = Infinity;
+  for (const t of tokens) { const i = low.indexOf(t); if (i >= 0) first = Math.min(first, i); }
+  if (first === Infinity) first = 0;
+  const W = 220;
+  let a = 0, b = text.length;
+  if (text.length > W) { a = Math.max(0, first - 70); b = Math.min(text.length, a + W); }
+  const seg = text.slice(a, b), sl = seg.toLowerCase(), marks = [];
+  for (const t of tokens) { let i = sl.indexOf(t); while (i >= 0 && t) { marks.push([i, i + t.length]); i = sl.indexOf(t, i + t.length); } }
+  marks.sort((x, y) => x[0] - y[0]);
+  let html = a > 0 ? "… " : "", pos = 0;
+  for (const [s, e] of marks) {
+    if (e <= pos) continue;
+    const st = Math.max(s, pos);
+    html += esc(seg.slice(pos, st)) + "<mark>" + esc(seg.slice(st, e)) + "</mark>";
+    pos = e;
+  }
+  html += esc(seg.slice(pos)) + (b < text.length ? " …" : "");
+  return html;
+}
+
+/* ---------- clear progress ---------- */
+async function clearScreen(exams, prog, scope) {
+  setWatermark(null);
+  // tree: subject > source > set > section; leaves are "examId\u0001section"
+  const leafId = (ex, sec) => `${ex.id}\u0001${sec}`;
+  const tree = [];
+  for (const sj of [...SUBJECTS, UNSORTED]) {
+    const inS = exams.filter(ex => subjOf(ex) === sj.id);
+    if (!inS.length) continue;
+    const sNode = { label: sj.id === UNSORTED.id ? "Unsorted" : `${sj.id} · ${sj.name}`, children: [] };
+    for (const src of SOURCES) {
+      const inSrc = inS.filter(ex => srcOf(ex) === src).sort(byTitle);
+      if (!inSrc.length) continue;
+      const srcNode = { label: src, children: [] };
+      for (const ex of inSrc) {
+        const p = prog.get(ex.id);
+        srcNode.children.push({ label: ex.title, tally: p.all, total: ex.count,
+          children: (ex.sections || []).map(s => ({ label: s.name, leaf: leafId(ex, s.name), ex, sec: s.name, tally: p.bySec[s.name] || emptyTally(), total: s.count })) });
+      }
+      sNode.children.push(srcNode);
+    }
+    tree.push(sNode);
+  }
+  const leavesOf = n => n.leaf ? [n.leaf] : n.children.flatMap(leavesOf);
+  const tallyOf = n => n.leaf || n.tally ? (n.tally || emptyTally()) : sumTally(...n.children.map(tallyOf));
+  const totalOf = n => n.total ?? n.children.reduce((a, c) => a + totalOf(c), 0);
+  const chosen = new Set();
+  if (scope) {
+    for (const ex of exams) {
+      if (scope.examId && ex.id !== scope.examId) continue;
+      if (scope.subject && subjOf(ex) !== scope.subject) continue;
+      if (scope.source && srcOf(ex) !== scope.source) continue;
+      for (const s of ex.sections || []) chosen.add(leafId(ex, s.name));
+    }
+  }
+  const allLeaves = tree.flatMap(leavesOf);
+
+  const box = h("div", { class: "ctree" });
+  const erase = h("input", { type: "checkbox", id: "erase-solutions" });
+  const clearBtn = h("button", { class: "btn danger", type: "button" }, "Clear selected");
+  const status = h("span", { class: "muted", style: "font-size:14px" });
+
+  function row(node, depth, idx) {
+    const leaves = leavesOf(node), n = leaves.filter(l => chosen.has(l)).length;
+    const cb = h("input", { type: "checkbox", id: `ct-${depth}-${idx}` });
+    cb.checked = n === leaves.length && n > 0; cb.indeterminate = n > 0 && n < leaves.length;
+    cb.addEventListener("change", () => {
+      const all = leaves.every(l => chosen.has(l));
+      leaves.forEach(l => all ? chosen.delete(l) : chosen.add(l));
+      render();
+    });
+    const t = tallyOf(node), tot = totalOf(node);
+    return h("label", { class: "ct-row", "data-depth": String(depth), for: cb.id }, cb,
+      h("span", { class: "grow" }, node.label), h("span", { class: "ct-count mono" }, `${t.done}/${tot}`));
+  }
+  function render() {
+    let i = 0;
+    const rows = [];
+    const allCb = h("input", { type: "checkbox", id: "ct-all" });
+    allCb.checked = chosen.size === allLeaves.length && allLeaves.length > 0;
+    allCb.indeterminate = chosen.size > 0 && chosen.size < allLeaves.length;
+    allCb.addEventListener("change", () => { const all = chosen.size === allLeaves.length; allLeaves.forEach(l => all ? chosen.delete(l) : chosen.add(l)); render(); });
+    rows.push(h("label", { class: "ct-row ct-all", "data-depth": "0", for: "ct-all" }, allCb, h("span", { class: "grow" }, "Select all"),
+      h("span", { class: "ct-count mono" }, `${sumTally(...tree.map(tallyOf)).done}/${tree.reduce((a, n) => a + totalOf(n), 0)}`)));
+    const walk = (node, d) => { rows.push(row(node, d, i++)); if (!node.leaf) node.children.forEach(c => walk(c, d + 1)); };
+    tree.forEach(n => walk(n, 0));
+    box.replaceChildren(...rows);
+    clearBtn.disabled = chosen.size === 0;
+    status.textContent = chosen.size ? `${chosen.size} ${chosen.size === 1 ? "section" : "sections"} selected` : "Nothing selected";
+  }
+  render();
+
+  armed(clearBtn, "Clear selected", async () => {
+    const eraseAll = erase.checked;
+    const pick = [...chosen].map(l => { const [id, sec] = l.split("\u0001"); return { id, sec }; });
+    for (const { id, sec } of pick) {
+      const entries = await store.getAll(`${userKey()}|${id}|${sec}#`);
+      const dels = [];
+      for (const [k, w] of entries) {
+        if (eraseAll || !((w.strokes && w.strokes.length) || w.text)) dels.push(k);
+        else await store.set(k, Object.assign({}, w, { choice: null, revealed: false, ok: null }));
+      }
+      if (dels.length) await store.del(dels);
+    }
+    if (eraseAll) {
+      for (const ex of exams) {
+        if ((ex.sections || []).every(s => chosen.has(leafId(ex, s.name)))) await store.del([metaKey(ex.id)]);
+      }
+    }
+    toast(eraseAll ? "Progress and solutions cleared" : "Progress cleared");
+    homeScreen();
+  });
+
+  screen(topbar({ title: "Clear progress", sub: "Pick what to reset", onBack: homeScreen }),
+    h("main", { class: "home" },
+      h("p", { class: "muted", style: "margin:0" }, "Tick the subjects, sources, problem sets or sections to reset. The numbers show problems done. This only changes your progress on this device."),
+      box,
+      h("label", { class: "opt-row", for: "erase-solutions" }, erase, h("span", {}, h("b", {}, "Also erase my written solutions and typed notes"), h("br"), h("span", { class: "muted", style: "font-size:14px" }, "Leave this off to keep your work and reset only the answers you picked and checked."))),
+      h("div", { class: "clear-actions" }, clearBtn, status)));
 }
 
 /* ---------- admin (owner only) ---------- */
@@ -610,10 +1013,26 @@ async function adminScreen() {
   }
   async function loadExams() {
     const list = await S.backend.listExams();
+    list.sort(byTitle);
     exams.replaceChildren(...(list.length ? list.map(x => {
       const del = h("button", { class: "btn small danger", type: "button" }, "Delete");
-      armed(del, "Delete", async () => { await S.backend.deleteExam(x.id); toast(`Deleted ${x.title}`); loadExams(); });
-      return h("div", { class: "row" }, h("span", { class: "grow" }, x.title, h("small", { class: "mono" }, `${x.count} problems · id ${x.id}`)), del);
+      armed(del, "Delete", async () => { await S.backend.deleteExam(x.id); S.contentCache?.delete(x.id); toast(`Deleted ${x.title}`); loadExams(); });
+      const subjSel = h("select", { id: `subj-${x.id}`, "aria-label": `Subject of ${x.title}` },
+        h("option", { value: "", selected: subjOf(x) === UNSORTED.id }, "Choose…"),
+        ...SUBJECTS.map(sj => h("option", { value: sj.id, selected: x.subject === sj.id }, sj.id)));
+      const srcSel = h("select", { id: `src-${x.id}`, "aria-label": `Source of ${x.title}` },
+        ...SOURCES.map(src => h("option", { value: src, selected: srcOf(x) === src }, src)));
+      const saveMeta = async () => {
+        const data = { source: srcSel.value };
+        if (subjSel.value) data.subject = subjSel.value;
+        try { await S.backend.updateExamMeta(x.id, data); toast(`Saved: ${x.title} → ${subjSel.value || "Unsorted"} · ${srcSel.value}`); }
+        catch { toast("Couldn't save. Check your connection."); }
+      };
+      subjSel.addEventListener("change", saveMeta);
+      srcSel.addEventListener("change", saveMeta);
+      return h("div", { class: "admin-exam" },
+        h("div", { class: "admin-exam-top" }, h("span", { class: "grow" }, x.title, h("small", { class: "mono" }, `${x.count} problems · id ${x.id}`)), del),
+        h("div", { class: "admin-exam-sel" }, h("label", { for: subjSel.id }, "Subject", subjSel), h("label", { for: srcSel.id }, "Source", srcSel)));
     }) : [h("div", { class: "empty" }, "No exams yet. Import the .json file I gave you.")]));
   }
   addBtn.addEventListener("click", async () => {
@@ -634,6 +1053,7 @@ async function adminScreen() {
       if (x.format !== "exam-viewer/1" || !x.id || !Array.isArray(x.questions) || !x.questions.length) throw new Error("bad");
       if (new Blob([JSON.stringify(x.questions)]).size > 900000) { toast("That exam is too big for one file. Split it in two."); return; }
       await S.backend.importExam(x);
+      S.contentCache?.delete(x.id);
       toast(`Imported ${x.title} (${x.questions.length} problems)`);
       loadExams();
     } catch (e) { toast(e.message === "bad" ? "That isn't an exam file from this app." : "Import failed. Check that the Firestore rules are published."); }
@@ -647,7 +1067,7 @@ async function adminScreen() {
         emailBox, h("div", {}, addBtn), people),
       h("section", { class: "admin-block" },
         h("h3", {}, "Exams"),
-        h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Importing a file with the same id replaces that exam. People's own drawings stay on their devices."),
+        h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Importing a file with the same id replaces that exam. People's own drawings stay on their devices. Choose each exam's subject and source here; it saves as soon as you change it."),
         h("div", {}, importBtn), exams)));
   setWatermark(null);
   loadPeople().catch(() => people.replaceChildren(h("div", { class: "err-box" }, "Couldn't load the list. Are the Firestore rules published?")));
@@ -665,24 +1085,96 @@ function buildPages(exam) {
   return pages;
 }
 
-async function openExam(id) {
+async function openExam(id, target) {
   messageScreen("Opening…", h("p", { class: "muted" }, "Loading the problems."));
   try {
-    S.exam = await S.backend.loadExam(id);
+    S.exam = (S.contentCache && S.contentCache.get(id)) || await S.backend.loadExam(id);
   } catch (e) {
     messageScreen("Couldn't open this problem set", h("p", { class: "muted" }, e.message || "Check your connection and try again."),
       [h("button", { class: "btn", type: "button", onclick: homeScreen }, "Back")]);
     return;
   }
   S.pages = buildPages(S.exam);
+  // this device's saved work for every problem, for the progress bar
+  const prefix = `${userKey()}|${S.exam.id}|`;
+  S.progress = new Map();
+  for (const [k, w] of await store.getAll(prefix)) if (!k.endsWith("|~meta")) S.progress.set(k.slice(prefix.length), w);
   const meta = await store.get(metaKey(S.exam.id));
   S.pageIndex = Math.min(meta?.page ?? 0, S.pages.length - 1);
+  S.jumpTo = null;
+  if (target) {
+    const qi = S.exam.questions.findIndex(x => x.section === target.section && x.num === target.num);
+    const pi = S.pages.findIndex(p => p.idx.includes(qi));
+    if (pi >= 0) { S.pageIndex = pi; S.jumpTo = `${target.section}#${target.num}`; }
+  }
   renderExam();
 }
 
 function pageLabel(p, i) {
   const qs = p.idx.map(j => S.exam.questions[j].num);
   return `Page ${i + 1} · ${p.section} ${qs.length > 1 ? `${qs[0]}–${qs[qs.length - 1]}` : qs[0]}`;
+}
+
+// Tally from the exam's own answer key, so "right" and "wrong" are always current.
+function examTally(section) {
+  const t = emptyTally();
+  for (const q of S.exam.questions) {
+    if (section && q.section !== section) continue;
+    const w = S.progress.get(qKey(q));
+    if (!isDone(w)) continue;
+    t.done++;
+    if (w.revealed && w.choice) { if (w.choice === q.answer) t.right++; else t.wrong++; }
+  }
+  return t;
+}
+function updateExamProgress() {
+  const box = document.getElementById("exam-progress");
+  if (!box || !S.exam) return;
+  box.replaceChildren(progressView(examTally(null), S.exam.questions.length));
+  for (const chip of document.querySelectorAll(".sections .chip")) {
+    const s = (S.exam.sections || []).find(x => x.name === chip.dataset.section);
+    if (s) chip.querySelector(".mono").textContent = `${examTally(s.name).done}/${s.count}`;
+  }
+}
+
+function renderExam() {
+  const ex = S.exam;
+  const page = S.pages[S.pageIndex];
+  setWatermark(S.backend.mode === "preview" ? "PREVIEW" : S.user.email);
+  store.set(metaKey(ex.id), { page: S.pageIndex });
+
+  const header = topbar({ title: ex.title, sub: pageLabel(page, S.pageIndex), onBack: homeScreen });
+  header.append(toolButtons());
+
+  const firstPageOf = name => S.pages.findIndex(p => p.section === name);
+  const chips = h("nav", { class: "sections", "aria-label": "Sections" },
+    ...(ex.sections || []).map(s => h("button", { class: "chip", type: "button", "data-section": s.name, "aria-current": String(s.name === page.section), onclick: () => go(firstPageOf(s.name)) },
+      s.name, h("span", { class: "mono" }, String(s.count)))));
+  const progress = h("div", { class: "exam-progress", id: "exam-progress" });
+
+  const main = h("main", { class: "page" });
+  const select = h("select", { id: "page-select", "aria-label": "Go to page" },
+    ...S.pages.map((p, i) => h("option", { value: String(i), selected: i === S.pageIndex }, pageLabel(p, i))));
+  select.addEventListener("change", () => go(Number(select.value)));
+  const prev = h("button", { class: "btn", type: "button", disabled: S.pageIndex === 0, onclick: () => go(S.pageIndex - 1) }, "Prev");
+  const next = h("button", { class: "btn primary", type: "button", disabled: S.pageIndex === S.pages.length - 1, onclick: () => go(S.pageIndex + 1) }, "Next");
+  const pager = h("nav", { class: "pager", "aria-label": "Pages" }, h("div", { class: "pager-row" }, prev, select, next));
+
+  screen(header, chips, progress, main, pager);
+  for (const i of page.idx) main.append(problemCard(ex, ex.questions[i]));
+  updateExamProgress();
+  const cur = chips.querySelector('[aria-current="true"]');
+  if (cur) cur.scrollIntoView({ block: "nearest", inline: "center" });
+  if (S.jumpTo) {
+    const card = main.querySelector(`[data-key="${CSS.escape(S.jumpTo)}"]`);
+    S.jumpTo = null;
+    if (card) {
+      const top = card.getBoundingClientRect().top + window.scrollY - header.offsetHeight - 12;
+      window.scrollTo(0, Math.max(0, top));
+      card.classList.add("flash");
+      setTimeout(() => card.classList.remove("flash"), 1800);
+    }
+  }
 }
 
 function toolButtons() {
@@ -735,34 +1227,6 @@ function toolButtons() {
   return wrap;
 }
 
-function renderExam() {
-  const ex = S.exam;
-  const page = S.pages[S.pageIndex];
-  setWatermark(S.backend.mode === "preview" ? "PREVIEW" : S.user.email);
-  store.set(metaKey(ex.id), { page: S.pageIndex });
-
-  const header = topbar({ title: ex.title, sub: pageLabel(page, S.pageIndex), onBack: homeScreen });
-  header.append(toolButtons());
-
-  const firstPageOf = name => S.pages.findIndex(p => p.section === name);
-  const chips = h("nav", { class: "sections", "aria-label": "Sections" },
-    ...(ex.sections || []).map(s => h("button", { class: "chip", type: "button", "aria-current": String(s.name === page.section), onclick: () => go(firstPageOf(s.name)) },
-      s.name, h("span", { class: "mono" }, String(s.count)))));
-
-  const main = h("main", { class: "page" });
-  const select = h("select", { id: "page-select", "aria-label": "Go to page" },
-    ...S.pages.map((p, i) => h("option", { value: String(i), selected: i === S.pageIndex }, pageLabel(p, i))));
-  select.addEventListener("change", () => go(Number(select.value)));
-  const prev = h("button", { class: "btn", type: "button", disabled: S.pageIndex === 0, onclick: () => go(S.pageIndex - 1) }, "Prev");
-  const next = h("button", { class: "btn primary", type: "button", disabled: S.pageIndex === S.pages.length - 1, onclick: () => go(S.pageIndex + 1) }, "Next");
-  const pager = h("nav", { class: "pager", "aria-label": "Pages" }, h("div", { class: "pager-row" }, prev, select, next));
-
-  screen(header, chips, main, pager);
-  for (const i of page.idx) main.append(problemCard(ex, ex.questions[i]));
-  const cur = chips.querySelector('[aria-current="true"]');
-  if (cur) cur.scrollIntoView({ block: "nearest", inline: "center" });
-}
-
 function go(i) {
   if (i < 0 || i >= S.pages.length || i === S.pageIndex) return;
   S.pageIndex = i; renderExam();
@@ -777,7 +1241,11 @@ document.addEventListener("keydown", e => {
 function problemCard(ex, q) {
   const key = workKey(ex.id, q);
   let work = { strokes: [], h: 0.75, choice: null, revealed: false, text: "" };
-  const save = () => store.set(key, work);
+  const save = () => {
+    work.ok = work.revealed && work.choice ? work.choice === q.answer : null;
+    store.set(key, work);
+    if (S.progress && S.exam === ex) { S.progress.set(qKey(q), work); updateExamProgress(); }
+  };
   const letters = ["A", "B", "C", "D"];
   const long = q.choices.some(c => plain(c).length > 34);
 
@@ -818,7 +1286,7 @@ function problemCard(ex, q) {
   const ta = h("textarea", { id: `typed-${q.section.replace(/\W+/g, "-")}-${q.num}`, placeholder: "Type your solution or notes" });
   const typed = h("details", { class: "typed" }, h("summary", {}, "Type instead"), ta);
 
-  const card = h("article", { class: "problem", "aria-label": `Problem ${q.num}` },
+  const card = h("article", { class: "problem", "aria-label": `Problem ${q.num}`, "data-key": qKey(q) },
     h("div", { class: "problem-head" }, h("span", { class: "qnum" }, String(q.num)), h("span", { class: "qsec" }, q.section)),
     h("div", { class: "qtext", html: rich(q.text) }),
     ...(q.notes || []).map(n => h("div", { class: "qnote", html: rich(n) })),
