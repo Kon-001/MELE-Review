@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>MELE Problem Sets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<!--CONFIG-->
+<script src="config.js"></script>
+<!--/CONFIG-->
+<style>
+/* Layout idea: a quiet app shell around "engineering computation pad" problem cards,
+   two problems per page, each with a green-grid solution pad you write on. */
+:root {
+  --paper: #ffffff;
+  --desk: #eef1ee;
+  --ink: #1b2430;
+  --muted: #5a6573;
+  --rule: #d6ddd7;
+  --pad: #f1f7ee;
+  --grid: #d2e3cb;
+  --grid-major: #b9d2b0;
+  --accent: #245c45;
+  --accent-soft: #e2eee7;
+  --good: #1e7a4b;
+  --good-soft: #dff1e6;
+  --bad: #b23b2a;
+  --bad-soft: #f8e3df;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 10px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--desk);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+button, select, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+.hidden { display: none !important; }
+
+/* protection: no selecting, no callout, no printing */
+.protect, .protect * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.protect textarea, .protect input { -webkit-user-select: text; user-select: text; }
+@media print {
+  body > * { display: none !important; }
+  body::after { content: "Printing is turned off for this review material."; display: block; padding: 40px; font: 16px sans-serif; }
+}
+
+/* generic pieces */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 40px; padding: 8px 14px; border-radius: 8px;
+  border: 1px solid var(--rule); background: var(--paper); font-weight: 500; font-size: 15px;
+}
+.btn:hover { border-color: var(--grid-major); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.danger { color: var(--bad); }
+.btn.armed { background: var(--bad); border-color: var(--bad); color: #fff; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.small { min-height: 34px; padding: 5px 10px; font-size: 14px; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* centred screens: sign-in, messages */
+.center-screen {
+  min-height: 100%; display: grid; place-items: center;
+  padding: calc(24px + var(--safe-top)) 20px calc(24px + var(--safe-bottom));
+}
+.panel {
+  width: min(440px, 100%); background: var(--paper); border: 1px solid var(--rule);
+  border-radius: 14px; padding: 28px 24px; display: grid; gap: 16px;
+}
+.panel h1 { font-size: 24px; line-height: 1.25; }
+.panel p { margin: 0; }
+.brand { font-family: var(--font-mono); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.google-btn { min-height: 48px; font-size: 16px; }
+.google-btn svg { width: 20px; height: 20px; }
+.note-box { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; font-size: 14px; }
+.err-box { background: var(--bad-soft); color: #6d2318; border-radius: 8px; padding: 12px 14px; font-size: 14px; }
+
+/* top bar */
+.topbar {
+  position: sticky; top: 0; z-index: 30;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--rule);
+  padding: calc(8px + var(--safe-top)) 16px 8px;
+}
+.topbar-row { max-width: 860px; margin: 0 auto; display: flex; align-items: center; gap: 10px; }
+.topbar-title { flex: 1; min-width: 0; }
+.topbar-title b { display: block; font-size: 16px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar-title span { display: block; font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn {
+  width: 40px; height: 40px; display: inline-grid; place-items: center; flex: none;
+  border-radius: 8px; border: 1px solid transparent; background: transparent;
+}
+.icon-btn:hover { background: var(--desk); }
+.icon-btn svg { width: 22px; height: 22px; }
+
+/* tools row */
+.tools { max-width: 860px; margin: 8px auto 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.tool {
+  height: 36px; min-width: 36px; padding: 0 9px; border-radius: 8px;
+  border: 1px solid var(--rule); background: var(--paper);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; font-weight: 500;
+}
+.tool[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.tool svg { width: 18px; height: 18px; }
+.swatch { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--rule); }
+.tool-sep { width: 1px; height: 24px; background: var(--rule); margin: 0 2px; }
+.tools .grow { flex: 1; }
+
+/* home */
+.home { max-width: 860px; margin: 0 auto; padding: 20px 16px calc(32px + var(--safe-bottom)); display: grid; gap: 18px; }
+.home h2 { font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.exam-list { display: grid; gap: 12px; }
+.exam-card {
+  text-align: left; width: 100%; background: var(--paper); border: 1px solid var(--rule);
+  border-left: 5px solid var(--accent); border-radius: var(--radius); padding: 16px 18px;
+  display: grid; gap: 6px;
+}
+.exam-card:hover { border-color: var(--grid-major); border-left-color: var(--accent); }
+.exam-card h3 { font-size: 19px; line-height: 1.3; }
+.exam-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: var(--muted); }
+.progress { height: 6px; border-radius: 3px; background: var(--desk); overflow: hidden; margin-top: 4px; }
+.progress i { display: block; height: 100%; background: var(--accent); width: 0; }
+.banner { background: #fff7e0; border: 1px solid #ecd58f; color: #5b4500; border-radius: var(--radius); padding: 12px 14px; font-size: 14px; }
+
+/* exam view */
+.sections { max-width: 860px; margin: 14px auto 0; padding: 0 16px; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.sections::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px;
+  border-radius: 999px; border: 1px solid var(--rule); background: var(--paper); font-size: 14px; font-weight: 500;
+}
+.chip .mono { font-size: 12px; color: var(--muted); }
+.chip[aria-current="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.chip[aria-current="true"] .mono { color: #c9d1da; }
+
+.page { max-width: 860px; margin: 0 auto; padding: 14px 16px calc(96px + var(--safe-bottom)); display: grid; gap: 18px; }
+.problem { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 18px 16px; display: grid; gap: 14px; }
+.problem-head { display: flex; align-items: center; gap: 12px; }
+.qnum {
+  font-family: var(--font-mono); font-weight: 600; font-size: 15px; min-width: 40px; height: 32px; padding: 0 8px;
+  border-radius: 6px; background: var(--ink); color: #fff; display: inline-grid; place-items: center;
+}
+.qsec { font-size: 13px; color: var(--muted); letter-spacing: .02em; }
+.qtext { font-size: 17px; line-height: 1.6; max-width: 70ch; }
+.qnote { font-size: 15px; font-style: italic; color: var(--muted); border-left: 3px solid var(--grid-major); padding-left: 10px; }
+sup, sub { font-size: .72em; line-height: 0; }
+.choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.choices.long { grid-template-columns: 1fr; }
+.choice {
+  display: flex; align-items: flex-start; gap: 10px; text-align: left; padding: 10px 12px; min-height: 46px;
+  border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); font-size: 16px; line-height: 1.45;
+}
+.choice .letter { font-family: var(--font-mono); font-weight: 600; width: 26px; height: 26px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--desk); font-size: 14px; }
+.choice[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.choice[aria-pressed="true"] .letter { background: var(--ink); color: #fff; }
+.choice.is-correct { border-color: var(--good); background: var(--good-soft); box-shadow: inset 0 0 0 1px var(--good); }
+.choice.is-correct .letter { background: var(--good); color: #fff; }
+.choice.is-wrong { border-color: var(--bad); background: var(--bad-soft); box-shadow: inset 0 0 0 1px var(--bad); }
+.choice.is-wrong .letter { background: var(--bad); color: #fff; }
+.answer-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.answer-tag { font-family: var(--font-mono); font-weight: 600; font-size: 15px; padding: 6px 12px; border-radius: 6px; background: var(--good-soft); color: var(--good); }
+.verdict { font-size: 14px; font-weight: 500; }
+.verdict.good { color: var(--good); }
+.verdict.bad { color: var(--bad); }
+
+/* solution pad */
+.pad-wrap { display: grid; gap: 8px; }
+.pad-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pad-label b { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+.pad-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.pad {
+  position: relative; border: 1px solid var(--grid-major); border-radius: 8px; overflow: hidden;
+  background-color: var(--pad);
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: calc(var(--cell, 20px) * 5) calc(var(--cell, 20px) * 5), calc(var(--cell, 20px) * 5) calc(var(--cell, 20px) * 5), var(--cell, 20px) var(--cell, 20px), var(--cell, 20px) var(--cell, 20px);
+  touch-action: pan-y pinch-zoom;
+}
+.pad.writing { touch-action: none; }
+.pad canvas { display: block; width: 100%; height: 100%; }
+.pad-hint { position: absolute; left: 12px; bottom: 10px; font-size: 13px; color: #6f8a66; pointer-events: none; }
+.typed summary { cursor: pointer; font-size: 14px; color: var(--muted); padding: 4px 0; }
+.typed textarea {
+  width: 100%; min-height: 110px; resize: vertical; margin-top: 6px; padding: 10px 12px;
+  border: 1px solid var(--rule); border-radius: 8px; background: var(--paper); font-size: 16px; line-height: 1.5;
+}
+
+/* pager */
+.pager {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  background: color-mix(in srgb, var(--paper) 95%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid var(--rule); padding: 10px 16px calc(10px + var(--safe-bottom));
+}
+.pager-row { max-width: 860px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
+.pager select {
+  flex: 1; min-width: 0; height: 44px; border-radius: 8px; border: 1px solid var(--rule); background: var(--paper);
+  padding: 0 10px; font-size: 15px;
+}
+.pager .btn { min-height: 44px; min-width: 88px; }
+
+/* admin */
+.admin-block { background: var(--paper); border: 1px solid var(--rule); border-radius: 12px; padding: 18px; display: grid; gap: 12px; }
+.admin-block h3 { font-size: 18px; }
+.admin-block textarea { width: 100%; min-height: 84px; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 8px; font-size: 16px; resize: vertical; }
+.rows { display: grid; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+.row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--rule); }
+.row:first-child { border-top: 0; }
+.row .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.row small { display: block; color: var(--muted); }
+.empty { padding: 14px 12px; color: var(--muted); font-size: 14px; }
+.file-btn { position: relative; overflow: hidden; }
+.file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* watermark */
+.watermark { position: fixed; inset: 0; z-index: 20; pointer-events: none; opacity: .09; background-repeat: repeat; }
+
+/* toast */
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + var(--safe-bottom)); z-index: 50;
+  background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 8px; font-size: 14px; max-width: calc(100% - 32px);
+}
+
+@media (max-width: 560px) {
+  .choices { grid-template-columns: 1fr; }
+  .problem { padding: 16px 14px 14px; }
+  .qtext { font-size: 16px; }
+  .tool-label { display: none; }
+  .pager .btn { min-width: 64px; padding: 8px 10px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .choice, .tool, .btn { transition: background-color .15s, border-color .15s, color .15s; }
+}
+</style>
+</head>
+<body>
+<div id="app" class="protect"></div>
+<div id="watermark" class="watermark hidden" aria-hidden="true"></div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<script type="module">
+/* ============================================================
+   MELE Problem Sets — review viewer
+   Modes: "firebase" (Google sign-in + email list) or "preview"
+   (exam embedded in the page, no sign-in; used for the private preview).
+   ============================================================ */
+const FIREBASE_VERSION = "12.11.0";
+const PREVIEW = window.EXAM_PREVIEW || null;
+const app = document.getElementById("app");
+
+/* ---------- small helpers ---------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "html") el.innerHTML = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : document.createTextNode(kid));
+  return el;
+}
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
+// Exam text may carry <sup>/<sub> only; everything else is escaped.
+function rich(s) { return esc(s).replace(/&lt;(\/?)(sup|sub)&gt;/g, "<$1$2>"); }
+function plain(s) { return String(s).replace(/<\/?(sup|sub)>/g, ""); }
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.remove("hidden");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add("hidden"), 2600);
+}
+// Two-tap confirmation (confirm() is blocked in some viewers).
+function armed(btn, label, action) {
+  let timer;
+  btn.addEventListener("click", async () => {
+    if (btn.classList.contains("armed")) {
+      clearTimeout(timer); btn.classList.remove("armed"); btn.textContent = label;
+      await action();
+    } else {
+      btn.classList.add("armed"); btn.textContent = "Tap again";
+      timer = setTimeout(() => { btn.classList.remove("armed"); btn.textContent = label; }, 3000);
+    }
+  });
+}
+const ICON = {
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  pen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>',
+  eraser: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H8.5L3.6 15.1a2 2 0 010-2.8L13.3 2.6a2 2 0 012.8 0l4.3 4.3a2 2 0 010 2.8L11 19.2"/><path d="M6 11l7 7"/></svg>',
+  hand: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 00-4 0v5"/><path d="M14 10V4a2 2 0 00-4 0v6"/><path d="M10 10.5V6a2 2 0 00-4 0v8"/><path d="M18 8a2 2 0 014 0v6a8 8 0 01-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 012.8-2.8L7 15"/></svg>',
+  logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
+  people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.9"/><path d="M16 3.1a4 4 0 010 7.8"/></svg>',
+  google: '<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
+};
+
+/* ---------- protection against copying, saving and printing ---------- */
+const inEditable = t => t && (t.closest?.("textarea, input"));
+document.addEventListener("contextmenu", e => { if (!inEditable(e.target)) e.preventDefault(); });
+document.addEventListener("copy", e => { if (!inEditable(e.target)) e.preventDefault(); });
+document.addEventListener("cut", e => { if (!inEditable(e.target)) e.preventDefault(); });
+document.addEventListener("dragstart", e => e.preventDefault());
+document.addEventListener("keydown", e => {
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && ["p", "s", "u"].includes(k)) { e.preventDefault(); return; }
+  if ((e.ctrlKey || e.metaKey) && ["c", "x", "a"].includes(k) && !inEditable(e.target)) e.preventDefault();
+});
+window.addEventListener("beforeprint", () => { document.body.style.visibility = "hidden"; });
+window.addEventListener("afterprint", () => { document.body.style.visibility = ""; });
+
+function setWatermark(text) {
+  const wm = document.getElementById("watermark");
+  if (!text) { wm.classList.add("hidden"); return; }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="340" height="190"><text x="20" y="120" transform="rotate(-24 170 95)" font-family="Helvetica, Arial, sans-serif" font-size="15" fill="#1b2430">${esc(text)}</text></svg>`;
+  wm.style.backgroundImage = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+  wm.classList.remove("hidden");
+}
+
+/* ---------- local storage of each person's work (IndexedDB, falls back to memory) ---------- */
+const store = (() => {
+  const mem = new Map();
+  let dbp = null;
+  try {
+    dbp = new Promise((res, rej) => {
+      const r = indexedDB.open("mele-review", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("work");
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    }).catch(() => null);
+  } catch { dbp = Promise.resolve(null); }
+  async function tx(mode, fn) {
+    const db = await dbp;
+    if (!db) return null;
+    return new Promise((res, rej) => {
+      const t = db.transaction("work", mode);
+      const out = fn(t.objectStore("work"));
+      t.oncomplete = () => res(out && "result" in out ? out.result : undefined);
+      t.onerror = () => rej(t.error);
+    }).catch(() => null);
+  }
+  return {
+    async get(key) {
+      if (mem.has(key)) return mem.get(key);
+      const v = await tx("readonly", s => s.get(key));
+      if (v !== undefined && v !== null) mem.set(key, v);
+      return v ?? null;
+    },
+    async set(key, val) { mem.set(key, val); await tx("readwrite", s => s.put(val, key)); },
+    async keys(prefix) {
+      const range = IDBKeyRange.bound(prefix, prefix + "￿");
+      const ks = await tx("readonly", s => s.getAllKeys(range));
+      const all = new Set(ks || []);
+      for (const k of mem.keys()) if (k.startsWith(prefix)) all.add(k);
+      return [...all];
+    },
+  };
+})();
+
+/* ---------- backends ---------- */
+function previewBackend() {
+  return {
+    mode: "preview",
+    async start(onState) { onState({ user: { email: "preview", name: "Preview" }, allowed: true, owner: false }); },
+    async listExams() { return [{ id: PREVIEW.id, title: PREVIEW.title, subtitle: PREVIEW.subtitle, sections: PREVIEW.sections, count: PREVIEW.questions.length }]; },
+    async loadExam() { return PREVIEW; },
+  };
+}
+
+async function firebaseBackend() {
+  const cfg = Object.assign({}, window.FIREBASE_CONFIG || {});
+  if (!cfg.apiKey || String(cfg.apiKey).includes("PASTE")) throw Object.assign(new Error("not-configured"), { code: "not-configured" });
+  // On Firebase Hosting, sign in through this same address (keeps Safari happy).
+  if (/\.(web\.app|firebaseapp\.com)$/.test(location.hostname)) cfg.authDomain = location.hostname;
+  const base = `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/`;
+  const [fa, au, fs] = await Promise.all([
+    import(base + "firebase-app.js"), import(base + "firebase-auth.js"), import(base + "firebase-firestore.js"),
+  ]);
+  const fbApp = fa.initializeApp(cfg);
+  const auth = au.getAuth(fbApp);
+  const db = fs.getFirestore(fbApp);
+  const provider = new au.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  au.getRedirectResult(auth).catch(e => { pendingAuthError = e; showAuthError(e); });
+
+  async function access(user) {
+    const email = (user.email || "").toLowerCase();
+    let owner = false;
+    try { await fs.getDocs(fs.query(fs.collection(db, "allowed"), fs.limit(1))); owner = true; } catch { owner = false; }
+    if (owner) return { allowed: true, owner: true };
+    try {
+      const snap = await fs.getDoc(fs.doc(db, "allowed", email));
+      return { allowed: snap.exists(), owner: false };
+    } catch { return { allowed: false, owner: false }; }
+  }
+  return {
+    mode: "firebase",
+    async start(onState) {
+      au.onAuthStateChanged(auth, async user => {
+        if (!user) return onState({ user: null });
+        onState({ user: { email: user.email, name: user.displayName }, checking: true });
+        const a = await access(user);
+        onState({ user: { email: user.email, name: user.displayName }, ...a });
+      });
+    },
+    async signIn() {
+      try { await au.signInWithPopup(auth, provider); }
+      catch (e) {
+        if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request"].includes(e.code)) {
+          await au.signInWithRedirect(auth, provider);
+        } else if (e.code !== "auth/popup-closed-by-user") throw e;
+      }
+    },
+    signOut: () => au.signOut(auth),
+    async listExams() {
+      const snap = await fs.getDocs(fs.collection(db, "exams"));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.title.localeCompare(b.title));
+    },
+    async loadExam(id) {
+      const [m, c] = await Promise.all([fs.getDoc(fs.doc(db, "exams", id)), fs.getDoc(fs.doc(db, "examContent", id))]);
+      if (!m.exists() || !c.exists()) throw new Error("This exam was removed.");
+      return { id, ...m.data(), ...c.data() };
+    },
+    async listAllowed() {
+      const snap = await fs.getDocs(fs.collection(db, "allowed"));
+      return snap.docs.map(d => ({ email: d.id, ...d.data() })).sort((a, b) => a.email.localeCompare(b.email));
+    },
+    async addAllowed(emails) {
+      const b = fs.writeBatch(db);
+      for (const e of emails) b.set(fs.doc(db, "allowed", e), { addedAt: fs.serverTimestamp() });
+      await b.commit();
+    },
+    removeAllowed: email => fs.deleteDoc(fs.doc(db, "allowed", email)),
+    async importExam(x) {
+      const meta = { title: x.title, subtitle: x.subtitle || "", sections: x.sections, count: x.questions.length, updatedAt: fs.serverTimestamp() };
+      const b = fs.writeBatch(db);
+      b.set(fs.doc(db, "exams", x.id), meta);
+      b.set(fs.doc(db, "examContent", x.id), { questions: x.questions });
+      await b.commit();
+    },
+    async deleteExam(id) {
+      const b = fs.writeBatch(db);
+      b.delete(fs.doc(db, "exams", id)); b.delete(fs.doc(db, "examContent", id));
+      await b.commit();
+    },
+  };
+}
+
+/* ---------- app state ---------- */
+const S = {
+  backend: null, user: null, owner: false,
+  exam: null, pages: [], pageIndex: 0,
+  tool: { kind: "pen", color: "#1b2430", finger: false },
+  pads: [],
+};
+const userKey = () => (S.user?.email || "anon").toLowerCase();
+const qKey = q => `${q.section}#${q.num}`;
+const workKey = (examId, q) => `${userKey()}|${examId}|${qKey(q)}`;
+const metaKey = examId => `${userKey()}|${examId}|~meta`;
+
+/* ---------- screens ---------- */
+function screen(...nodes) { S.pads.forEach(p => p.destroy()); S.pads = []; app.replaceChildren(...nodes); window.scrollTo(0, 0); }
+
+function messageScreen(title, body, actions = []) {
+  screen(h("div", { class: "center-screen" }, h("div", { class: "panel" },
+    h("div", { class: "brand" }, "MELE Problem Sets"), h("h1", {}, title), ...[].concat(body), ...actions)));
+}
+
+let pendingAuthError = null;
+function showAuthError(e) {
+  if (!e || !e.code) return;
+  const msgs = {
+    "auth/unauthorized-domain": `This address (${location.hostname}) isn't on Firebase's list of authorized domains. Add it in Firebase → Authentication → Settings → Authorized domains, then try again.`,
+    "auth/operation-not-allowed": "Google sign-in isn't turned on yet. Turn it on in Firebase → Authentication → Sign-in method → Google.",
+    "auth/network-request-failed": "No internet connection. Check your connection and try again.",
+  };
+  const box = $("#auth-error");
+  if (box) { box.textContent = msgs[e.code] || `Sign-in failed (${e.code}). Try again.`; box.classList.remove("hidden"); }
+}
+
+function signInScreen() {
+  setWatermark(null);
+  const btn = h("button", { class: "btn google-btn", type: "button", html: `${ICON.google}<span>Sign in with Google</span>` });
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    try { await S.backend.signIn(); } catch (e) { showAuthError(e); } finally { btn.disabled = false; }
+  });
+  messageScreen("Review problems for the MELE board exam", [
+    h("p", { class: "muted" }, "Sign in with the Google account your reviewer added to the access list."),
+    btn,
+    h("div", { id: "auth-error", class: "err-box hidden", role: "alert" }),
+  ]);
+  if (pendingAuthError) { showAuthError(pendingAuthError); pendingAuthError = null; }
+}
+
+function notAllowedScreen() {
+  setWatermark(null);
+  const out = h("button", { class: "btn", type: "button", onclick: () => S.backend.signOut() }, "Sign in with another account");
+  messageScreen("You don't have access yet", [
+    h("p", {}, "You're signed in as ", h("b", {}, S.user.email), "."),
+    h("p", { class: "muted" }, "Ask the owner to add this exact email to the access list, then reload this page."),
+  ], [out]);
+}
+
+function topbar({ title, sub, onBack, right = [] }) {
+  const row = h("div", { class: "topbar-row" },
+    onBack ? h("button", { class: "icon-btn", type: "button", "aria-label": "Back", html: ICON.back, onclick: onBack }) : null,
+    h("div", { class: "topbar-title" }, h("b", {}, title), sub ? h("span", {}, sub) : null),
+    ...right);
+  return h("header", { class: "topbar" }, row);
+}
+
+async function homeScreen() {
+  setWatermark(S.backend.mode === "preview" ? "PREVIEW" : S.user.email);
+  const right = [];
+  if (S.owner) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Manage access and exams", title: "Manage", html: ICON.people, onclick: adminScreen }));
+  if (S.backend.signOut) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Sign out", title: "Sign out", html: ICON.logout, onclick: () => S.backend.signOut() }));
+  const list = h("div", { class: "exam-list" }, h("p", { class: "muted" }, "Loading…"));
+  const banner = S.backend.mode === "preview"
+    ? h("div", { class: "banner" }, h("b", {}, "Preview. "), "This copy opens without sign-in so you can try it. In the real app, people sign in with Google and only the emails you add can open it.")
+    : null;
+  screen(topbar({ title: "MELE Problem Sets", sub: S.backend.mode === "preview" ? "Preview" : S.user.email, right }),
+    h("main", { class: "home" }, banner, h("h2", {}, "Problem sets"), list));
+  try {
+    const exams = await S.backend.listExams();
+    if (!exams.length) {
+      list.replaceChildren(h("p", { class: "empty" }, S.owner ? "No problem sets yet. Tap the people icon, then import an exam file." : "No problem sets have been added yet."));
+      return;
+    }
+    const cards = await Promise.all(exams.map(async ex => {
+      const done = (await store.keys(`${userKey()}|${ex.id}|`)).filter(k => !k.endsWith("~meta")).length;
+      const pct = ex.count ? Math.min(100, Math.round(done / ex.count * 100)) : 0;
+      return h("button", { class: "exam-card", type: "button", onclick: () => openExam(ex.id) },
+        h("span", { class: "qsec" }, ex.subtitle || ""),
+        h("h3", {}, ex.title),
+        h("span", { class: "exam-meta" },
+          h("span", { class: "mono" }, `${ex.count} problems`),
+          h("span", {}, (ex.sections || []).map(s => s.name).join(" · ")),
+          h("span", { class: "mono" }, `${done} worked on`)),
+        h("span", { class: "progress", "aria-hidden": "true" }, h("i", { style: `width:${pct}%` })));
+    }));
+    list.replaceChildren(...cards);
+  } catch (e) {
+    list.replaceChildren(h("div", { class: "err-box" }, "Couldn't load the problem sets. Check your connection and reload."));
+  }
+}
+
+/* ---------- admin (owner only) ---------- */
+async function adminScreen() {
+  const emailBox = h("textarea", { id: "new-emails", placeholder: "name@gmail.com, another@gmail.com", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
+  const addBtn = h("button", { class: "btn primary", type: "button" }, "Add emails");
+  const people = h("div", { class: "rows" }, h("div", { class: "empty" }, "Loading…"));
+  const exams = h("div", { class: "rows" }, h("div", { class: "empty" }, "Loading…"));
+  const fileInput = h("input", { type: "file", id: "exam-file", accept: ".json,application/json" });
+  const importBtn = h("label", { class: "btn file-btn", for: "exam-file" }, "Import exam file (.json)", fileInput);
+  const count = h("span", { class: "muted" });
+
+  async function loadPeople() {
+    const list = await S.backend.listAllowed();
+    count.textContent = `${list.length} ${list.length === 1 ? "person" : "people"}`;
+    people.replaceChildren(...(list.length ? list.map(p => {
+      const rm = h("button", { class: "btn small danger", type: "button" }, "Remove");
+      armed(rm, "Remove", async () => { await S.backend.removeAllowed(p.email); toast(`Removed ${p.email}`); loadPeople(); });
+      return h("div", { class: "row" }, h("span", { class: "grow" }, p.email), rm);
+    }) : [h("div", { class: "empty" }, "Nobody yet. Only you can open the problem sets.")]));
+  }
+  async function loadExams() {
+    const list = await S.backend.listExams();
+    exams.replaceChildren(...(list.length ? list.map(x => {
+      const del = h("button", { class: "btn small danger", type: "button" }, "Delete");
+      armed(del, "Delete", async () => { await S.backend.deleteExam(x.id); toast(`Deleted ${x.title}`); loadExams(); });
+      return h("div", { class: "row" }, h("span", { class: "grow" }, x.title, h("small", { class: "mono" }, `${x.count} problems · id ${x.id}`)), del);
+    }) : [h("div", { class: "empty" }, "No exams yet. Import the .json file I gave you.")]));
+  }
+  addBtn.addEventListener("click", async () => {
+    const raw = emailBox.value.split(/[\s,;]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
+    const good = raw.filter(e => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
+    const bad = raw.filter(e => !good.includes(e));
+    if (!good.length) { toast(bad.length ? `Not an email: ${bad[0]}` : "Type at least one email."); return; }
+    addBtn.disabled = true;
+    try { await S.backend.addAllowed([...new Set(good)]); emailBox.value = bad.join(", "); toast(`Added ${good.length}${bad.length ? `, skipped ${bad.length} that aren't emails` : ""}`); await loadPeople(); }
+    catch (e) { toast("Couldn't save. Check that the Firestore rules are published."); }
+    finally { addBtn.disabled = false; }
+  });
+  fileInput.addEventListener("change", async () => {
+    const f = fileInput.files[0]; fileInput.value = "";
+    if (!f) return;
+    try {
+      const x = JSON.parse(await f.text());
+      if (x.format !== "exam-viewer/1" || !x.id || !Array.isArray(x.questions) || !x.questions.length) throw new Error("bad");
+      if (new Blob([JSON.stringify(x.questions)]).size > 900000) { toast("That exam is too big for one file. Split it in two."); return; }
+      await S.backend.importExam(x);
+      toast(`Imported ${x.title} (${x.questions.length} problems)`);
+      loadExams();
+    } catch (e) { toast(e.message === "bad" ? "That isn't an exam file from this app." : "Import failed. Check that the Firestore rules are published."); }
+  });
+
+  screen(topbar({ title: "Manage", sub: "Who can open the problem sets", onBack: homeScreen }),
+    h("main", { class: "home" },
+      h("section", { class: "admin-block" },
+        h("h3", {}, "People with access ", count),
+        h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Add the Google account email of each person. They sign in with that account. Remove someone and they lose access right away."),
+        emailBox, h("div", {}, addBtn), people),
+      h("section", { class: "admin-block" },
+        h("h3", {}, "Exams"),
+        h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Importing a file with the same id replaces that exam. People's own drawings stay on their devices."),
+        h("div", {}, importBtn), exams)));
+  setWatermark(null);
+  loadPeople().catch(() => people.replaceChildren(h("div", { class: "err-box" }, "Couldn't load the list. Are the Firestore rules published?")));
+  loadExams().catch(() => exams.replaceChildren(h("div", { class: "err-box" }, "Couldn't load exams.")));
+}
+
+/* ---------- exam view ---------- */
+function buildPages(exam) {
+  const pages = [];
+  let cur = null;
+  exam.questions.forEach((q, i) => {
+    if (!cur || cur.section !== q.section || cur.idx.length === 2) { cur = { section: q.section, idx: [] }; pages.push(cur); }
+    cur.idx.push(i);
+  });
+  return pages;
+}
+
+async function openExam(id) {
+  messageScreen("Opening…", h("p", { class: "muted" }, "Loading the problems."));
+  try {
+    S.exam = await S.backend.loadExam(id);
+  } catch (e) {
+    messageScreen("Couldn't open this problem set", h("p", { class: "muted" }, e.message || "Check your connection and try again."),
+      [h("button", { class: "btn", type: "button", onclick: homeScreen }, "Back")]);
+    return;
+  }
+  S.pages = buildPages(S.exam);
+  const meta = await store.get(metaKey(S.exam.id));
+  S.pageIndex = Math.min(meta?.page ?? 0, S.pages.length - 1);
+  renderExam();
+}
+
+function pageLabel(p, i) {
+  const qs = p.idx.map(j => S.exam.questions[j].num);
+  return `Page ${i + 1} · ${p.section} ${qs.length > 1 ? `${qs[0]}–${qs[qs.length - 1]}` : qs[0]}`;
+}
+
+function toolButtons() {
+  const t = S.tool;
+  const mk = (label, pressed, inner, onclick, extra = {}) =>
+    h("button", { class: "tool", type: "button", "aria-pressed": String(pressed), "aria-label": label, title: label, onclick, ...extra, html: inner });
+  const colors = [["Black ink", "#1b2430"], ["Blue ink", "#1f4fa8"], ["Red ink", "#b23b2a"]];
+  const wrap = h("div", { class: "tools", role: "toolbar", "aria-label": "Writing tools" });
+  const redraw = () => wrap.replaceWith(toolButtons());
+  for (const [label, c] of colors) {
+    wrap.append(mk(label, t.kind === "pen" && t.color === c, `<span class="swatch" style="background:${c}"></span>`, () => { t.kind = "pen"; t.color = c; redraw(); }));
+  }
+  wrap.append(mk("Eraser", t.kind === "eraser", `${ICON.eraser}<span class="tool-label">Eraser</span>`, () => { t.kind = "eraser"; redraw(); }));
+  wrap.append(h("span", { class: "tool-sep" }));
+  wrap.append(mk("Write with finger", t.finger, `${ICON.hand}<span>${t.finger ? "Finger writes" : "Finger scrolls"}</span>`, () => {
+    t.finger = !t.finger; S.pads.forEach(p => p.setFinger(t.finger)); redraw();
+    toast(t.finger ? "Your finger now writes on the pads. Scroll outside the pads." : "Your finger scrolls. A stylus or mouse still writes.");
+  }));
+  return wrap;
+}
+
+function renderExam() {
+  const ex = S.exam;
+  const page = S.pages[S.pageIndex];
+  setWatermark(S.backend.mode === "preview" ? "PREVIEW" : S.user.email);
+  store.set(metaKey(ex.id), { page: S.pageIndex });
+
+  const header = topbar({ title: ex.title, sub: pageLabel(page, S.pageIndex), onBack: homeScreen });
+  header.append(toolButtons());
+
+  const firstPageOf = name => S.pages.findIndex(p => p.section === name);
+  const chips = h("nav", { class: "sections", "aria-label": "Sections" },
+    ...(ex.sections || []).map(s => h("button", { class: "chip", type: "button", "aria-current": String(s.name === page.section), onclick: () => go(firstPageOf(s.name)) },
+      s.name, h("span", { class: "mono" }, String(s.count)))));
+
+  const main = h("main", { class: "page" });
+  const select = h("select", { id: "page-select", "aria-label": "Go to page" },
+    ...S.pages.map((p, i) => h("option", { value: String(i), selected: i === S.pageIndex }, pageLabel(p, i))));
+  select.addEventListener("change", () => go(Number(select.value)));
+  const prev = h("button", { class: "btn", type: "button", disabled: S.pageIndex === 0, onclick: () => go(S.pageIndex - 1) }, "Prev");
+  const next = h("button", { class: "btn primary", type: "button", disabled: S.pageIndex === S.pages.length - 1, onclick: () => go(S.pageIndex + 1) }, "Next");
+  const pager = h("nav", { class: "pager", "aria-label": "Pages" }, h("div", { class: "pager-row" }, prev, select, next));
+
+  screen(header, chips, main, pager);
+  for (const i of page.idx) main.append(problemCard(ex, ex.questions[i]));
+  const cur = chips.querySelector('[aria-current="true"]');
+  if (cur) cur.scrollIntoView({ block: "nearest", inline: "center" });
+}
+
+function go(i) {
+  if (i < 0 || i >= S.pages.length || i === S.pageIndex) return;
+  S.pageIndex = i; renderExam();
+}
+document.addEventListener("keydown", e => {
+  if (!S.exam || !document.querySelector(".pager") || inEditable(e.target) || e.target.tagName === "SELECT") return;
+  if (e.key === "ArrowRight") go(S.pageIndex + 1);
+  if (e.key === "ArrowLeft") go(S.pageIndex - 1);
+});
+
+function problemCard(ex, q) {
+  const key = workKey(ex.id, q);
+  let work = { strokes: [], h: 0.75, choice: null, revealed: false, text: "" };
+  const save = () => store.set(key, work);
+  const letters = ["A", "B", "C", "D"];
+  const long = q.choices.some(c => plain(c).length > 34);
+
+  const choiceBtns = q.choices.map((c, i) => h("button", { class: "choice", type: "button", "aria-pressed": "false", "data-letter": letters[i] },
+    h("span", { class: "letter" }, letters[i]), h("span", { html: rich(c) })));
+  const answerTag = h("span", { class: "answer-tag hidden" }, `Answer: ${q.answer}`);
+  const verdict = h("span", { class: "verdict" });
+  const revealBtn = h("button", { class: "btn small", type: "button" }, "Show answer");
+
+  function paint() {
+    choiceBtns.forEach(b => {
+      const L = b.dataset.letter;
+      b.setAttribute("aria-pressed", String(work.choice === L));
+      b.classList.toggle("is-correct", work.revealed && L === q.answer);
+      b.classList.toggle("is-wrong", work.revealed && work.choice === L && L !== q.answer);
+    });
+    answerTag.classList.toggle("hidden", !work.revealed);
+    revealBtn.textContent = work.revealed ? "Hide answer" : "Show answer";
+    verdict.className = "verdict";
+    verdict.textContent = "";
+    if (work.revealed && work.choice) {
+      const ok = work.choice === q.answer;
+      verdict.classList.add(ok ? "good" : "bad");
+      verdict.textContent = ok ? "You got it." : `You picked ${work.choice}.`;
+    }
+  }
+  choiceBtns.forEach(b => b.addEventListener("click", () => { work.choice = work.choice === b.dataset.letter ? null : b.dataset.letter; paint(); save(); }));
+  revealBtn.addEventListener("click", () => { work.revealed = !work.revealed; paint(); save(); });
+
+  // solution pad
+  const padEl = h("div", { class: "pad" });
+  const hint = h("span", { class: "pad-hint" }, "Write your solution here");
+  padEl.append(hint);
+  const undo = h("button", { class: "btn small", type: "button" }, "Undo");
+  const more = h("button", { class: "btn small", type: "button" }, "More space");
+  const clear = h("button", { class: "btn small danger", type: "button" }, "Clear");
+  const ta = h("textarea", { id: `typed-${q.section.replace(/\W+/g, "-")}-${q.num}`, placeholder: "Type your solution or notes" });
+  const typed = h("details", { class: "typed" }, h("summary", {}, "Type instead"), ta);
+
+  const card = h("article", { class: "problem", "aria-label": `Problem ${q.num}` },
+    h("div", { class: "problem-head" }, h("span", { class: "qnum" }, String(q.num)), h("span", { class: "qsec" }, q.section)),
+    h("div", { class: "qtext", html: rich(q.text) }),
+    ...(q.notes || []).map(n => h("div", { class: "qnote", html: rich(n) })),
+    h("div", { class: `choices${long ? " long" : ""}` }, ...choiceBtns),
+    h("div", { class: "answer-row" }, revealBtn, answerTag, verdict),
+    h("div", { class: "pad-wrap" },
+      h("div", { class: "pad-label" }, h("b", {}, "Solution"), h("span", { class: "pad-actions" }, undo, more, clear)),
+      padEl, typed));
+
+  const pad = new Pad(padEl, () => work, () => { hint.classList.toggle("hidden", work.strokes.length > 0); save(); });
+  S.pads.push(pad);
+  undo.addEventListener("click", () => { work.strokes.pop(); pad.redraw(); hint.classList.toggle("hidden", work.strokes.length > 0); save(); });
+  more.addEventListener("click", () => { work.h = Math.min(3, +(work.h + 0.4).toFixed(2)); pad.resize(true); save(); toast("Added more writing space"); });
+  armed(clear, "Clear", async () => { work.strokes = []; work.h = 0.75; pad.resize(true); hint.classList.remove("hidden"); save(); });
+  let tt;
+  ta.addEventListener("input", () => { work.text = ta.value; clearTimeout(tt); tt = setTimeout(save, 400); });
+
+  store.get(key).then(v => {
+    if (v) work = Object.assign(work, v);
+    ta.value = work.text || "";
+    if (work.text) typed.open = true;
+    hint.classList.toggle("hidden", work.strokes.length > 0);
+    paint(); pad.resize(true);
+  });
+  paint();
+  return card;
+}
+
+/* ---------- drawing pad ----------
+   Strokes are stored in units of 1/10000 of the pad width, so they keep their
+   shape on any screen size. Pen and mouse always write; a finger writes only
+   when "Finger writes" is on (so you can scroll on phones). */
+class Pad {
+  constructor(el, getWork, onChange) {
+    this.el = el; this.getWork = getWork; this.onChange = onChange;
+    this.canvas = document.createElement("canvas");
+    el.prepend(this.canvas);
+    this.ctx = this.canvas.getContext("2d");
+    this.w = 0; this.active = null; this.lastPen = 0;
+    this.setFinger(S.tool.finger);
+    this.ro = new ResizeObserver(() => this.resize());
+    this.ro.observe(el);
+    const c = this.canvas;
+    c.addEventListener("pointerdown", e => this.down(e));
+    c.addEventListener("pointermove", e => this.move(e));
+    c.addEventListener("pointerup", e => this.up(e));
+    c.addEventListener("pointercancel", e => this.up(e));
+    // iPad: stop Apple Pencil from scrolling the page while writing.
+    const stopStylus = e => {
+      const t = [...e.touches];
+      if (S.tool.finger || t.some(x => x.touchType === "stylus")) e.preventDefault();
+    };
+    c.addEventListener("touchstart", stopStylus, { passive: false });
+    c.addEventListener("touchmove", stopStylus, { passive: false });
+  }
+  destroy() { this.ro.disconnect(); }
+  setFinger(on) { this.el.classList.toggle("writing", !!on); }
+  resize(force) {
+    const w = Math.round(this.el.clientWidth);
+    if (!w || (!force && w === this.w)) return;
+    this.w = w;
+    const work = this.getWork();
+    const hgt = Math.round(w * work.h);
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
+    this.el.style.height = hgt + "px";
+    this.el.style.setProperty("--cell", (w / 30).toFixed(2) + "px");
+    this.canvas.width = Math.round(w * dpr); this.canvas.height = Math.round(hgt * dpr);
+    this.dpr = dpr;
+    this.redraw();
+  }
+  redraw() {
+    const { ctx, canvas } = this;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const s of this.getWork().strokes) this.drawStroke(s);
+  }
+  style(s) {
+    const { ctx } = this;
+    const k = this.w * this.dpr / 10000;
+    ctx.setTransform(k, 0, 0, k, 0, 0);
+    ctx.globalCompositeOperation = s.k === "e" ? "destination-out" : "source-over";
+    ctx.strokeStyle = s.c || "#1b2430";
+    ctx.fillStyle = s.c || "#1b2430";
+    ctx.lineWidth = s.w; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  }
+  drawStroke(s) {
+    const p = s.p, n = p.length / 2;
+    if (!n) return;
+    this.style(s);
+    const { ctx } = this;
+    if (n === 1) { ctx.beginPath(); ctx.arc(p[0], p[1], s.w / 2, 0, Math.PI * 2); ctx.fill(); return; }
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]);
+    for (let i = 1; i < n - 1; i++) {
+      const mx = (p[2 * i] + p[2 * i + 2]) / 2, my = (p[2 * i + 1] + p[2 * i + 3]) / 2;
+      ctx.quadraticCurveTo(p[2 * i], p[2 * i + 1], mx, my);
+    }
+    ctx.lineTo(p[2 * n - 2], p[2 * n - 1]);
+    ctx.stroke();
+  }
+  // incremental drawing of the newest segment
+  drawTail(s) {
+    const p = s.p, n = p.length / 2;
+    this.style(s);
+    const { ctx } = this;
+    ctx.beginPath();
+    if (n < 3) { ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2 * n - 2], p[2 * n - 1]); ctx.stroke(); return; }
+    const i = n - 2;
+    const sx = (p[2 * i - 2] + p[2 * i]) / 2, sy = (p[2 * i - 1] + p[2 * i + 1]) / 2;
+    const ex = (p[2 * i] + p[2 * i + 2]) / 2, ey = (p[2 * i + 1] + p[2 * i + 3]) / 2;
+    ctx.moveTo(sx, sy); ctx.quadraticCurveTo(p[2 * i], p[2 * i + 1], ex, ey); ctx.stroke();
+  }
+  pt(e) {
+    const r = this.canvas.getBoundingClientRect();
+    return [Math.round((e.clientX - r.left) / this.w * 10000), Math.round((e.clientY - r.top) / this.w * 10000)];
+  }
+  down(e) {
+    if (e.pointerType === "pen") this.lastPen = Date.now();
+    if (e.pointerType === "touch" && (!S.tool.finger || Date.now() - this.lastPen < 1500)) return; // scroll / palm
+    if ((e.button > 0 && e.button !== 5) || this.active) return;
+    e.preventDefault();
+    try { this.canvas.setPointerCapture(e.pointerId); } catch {}
+    const eraser = S.tool.kind === "eraser" || e.button === 5 || (e.buttons & 32);
+    this.active = { id: e.pointerId, s: { k: eraser ? "e" : "p", c: eraser ? null : S.tool.color, w: eraser ? 260 : 36, p: this.pt(e) } };
+    this.drawStroke(this.active.s);
+  }
+  move(e) {
+    if (e.pointerType === "pen") this.lastPen = Date.now();
+    if (!this.active || e.pointerId !== this.active.id) return;
+    e.preventDefault();
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    const s = this.active.s;
+    for (const ev of (evs.length ? evs : [e])) {
+      const [x, y] = this.pt(ev);
+      const n = s.p.length;
+      if (Math.abs(x - s.p[n - 2]) + Math.abs(y - s.p[n - 1]) < 8) continue;
+      s.p.push(x, y);
+      this.drawTail(s);
+    }
+  }
+  up(e) {
+    if (!this.active || e.pointerId !== this.active.id) return;
+    const s = this.active.s;
+    this.active = null;
+    this.getWork().strokes.push(s);
+    this.redraw();
+    this.onChange();
+  }
+}
+
+/* ---------- start ---------- */
+async function main() {
+  try {
+    S.backend = PREVIEW ? previewBackend() : await firebaseBackend();
+  } catch (e) {
+    if (e.code === "not-configured") {
+      messageScreen("Almost ready", [
+        h("p", {}, "This app isn't connected to Firebase yet."),
+        h("p", { class: "muted" }, "Open config.js and paste the firebaseConfig values from your Firebase project (Project settings → Your apps), then reload."),
+      ]);
+    } else {
+      messageScreen("Couldn't start", h("p", { class: "muted" }, "The sign-in service didn't load. Check your internet connection and reload the page."));
+    }
+    return;
+  }
+  let lastEmail = null;
+  await S.backend.start(state => {
+    if (!state.user) { S.user = null; S.owner = false; lastEmail = null; signInScreen(); return; }
+    S.user = state.user;
+    if (state.checking) { messageScreen("Checking access…", h("p", { class: "muted" }, `Signed in as ${state.user.email}`)); return; }
+    S.owner = !!state.owner;
+    if (!state.allowed) { notAllowedScreen(); return; }
+    if (lastEmail !== state.user.email) { lastEmail = state.user.email; homeScreen(); }
+  });
+}
+main();
+</script>
+</body>
+</html>
