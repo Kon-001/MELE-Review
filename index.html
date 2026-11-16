@@ -296,6 +296,8 @@ mark { background: #ffe9a8; color: inherit; border-radius: 2px; padding: 0 1px; 
 .admin-exam-top { display: flex; gap: 10px; align-items: flex-start; }
 .admin-exam-top .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .admin-exam-top small { display: block; color: var(--muted); }
+.rename-row { display: flex; gap: 8px; }
+.rename-in { flex: 1; min-width: 0; height: 38px; border-radius: 8px; border: 1px solid var(--rule); background: var(--paper); padding: 0 10px; font-size: 16px; color: var(--ink); }
 .admin-exam-sel { display: flex; gap: 8px; flex-wrap: wrap; }
 .admin-exam-sel label { display: grid; gap: 2px; font-size: 13px; color: var(--muted); }
 .admin-exam-sel select { height: 38px; min-width: 120px; border-radius: 8px; border: 1px solid var(--rule); background: var(--paper); padding: 0 8px; font-size: 15px; color: var(--ink); }
@@ -1030,8 +1032,21 @@ async function adminScreen() {
       };
       subjSel.addEventListener("change", saveMeta);
       srcSel.addEventListener("change", saveMeta);
+      const nameIn = h("input", { type: "text", id: `name-${x.id}`, class: "rename-in", value: x.title, maxlength: "120", autocomplete: "off", "aria-label": `New name for ${x.title}` });
+      const renBtn = h("button", { class: "btn small", type: "button" }, "Rename");
+      const doRename = async () => {
+        const t = nameIn.value.trim().replace(/\s+/g, " ");
+        if (!t) { toast("Type a name first."); nameIn.value = x.title; return; }
+        if (t === x.title) { toast("That's already the name."); return; }
+        renBtn.disabled = true;
+        try { await S.backend.updateExamMeta(x.id, { title: t }); toast(`Renamed to ${t}`); loadExams(); }
+        catch { toast("Couldn't save. Check your connection."); renBtn.disabled = false; }
+      };
+      renBtn.addEventListener("click", doRename);
+      nameIn.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doRename(); } });
       return h("div", { class: "admin-exam" },
         h("div", { class: "admin-exam-top" }, h("span", { class: "grow" }, x.title, h("small", { class: "mono" }, `${x.count} problems · id ${x.id}`)), del),
+        h("div", { class: "rename-row" }, nameIn, renBtn),
         h("div", { class: "admin-exam-sel" }, h("label", { for: subjSel.id }, "Subject", subjSel), h("label", { for: srcSel.id }, "Source", srcSel)));
     }) : [h("div", { class: "empty" }, "No exams yet. Import the .json file I gave you.")]));
   }
