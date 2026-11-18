@@ -159,6 +159,13 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
   border-radius: 6px; background: var(--ink); color: #fff; display: inline-grid; place-items: center;
 }
 .qsec { font-size: 13px; color: var(--muted); letter-spacing: .02em; }
+.q-stick { display: grid; gap: 14px; background: var(--paper); }
+.q-stick.pinned { position: sticky; top: var(--topbar-h, 96px); z-index: 20; max-height: 42vh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  margin: 0 -18px; padding: 10px 18px 12px; border-bottom: 2px solid var(--accent); box-shadow: 0 6px 14px -8px rgba(0,0,0,.28); }
+.pin-btn { margin-left: auto; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--rule); background: var(--paper);
+  display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--muted); }
+.pin-btn svg { width: 16px; height: 16px; }
+.pin-btn[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
 .qtext { font-size: 17px; line-height: 1.6; max-width: 70ch; }
 .qnote { font-size: 15px; font-style: italic; color: var(--muted); border-left: 3px solid var(--grid-major); padding-left: 10px; }
 sup, sub { font-size: .72em; line-height: 0; }
@@ -398,6 +405,8 @@ function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<"
 function rich(s) { return esc(s).replace(/&lt;(\/?)(sup|sub)&gt;/g, "<$1$2>"); }
 function plain(s) { return String(s).replace(/<\/?(sup|sub)>/g, ""); }
 let toastTimer;
+window.addEventListener("offline", () => toast("You're offline. Your work keeps saving on this device."));
+window.addEventListener("online", () => toast("Back online."));
 function toast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg; t.classList.remove("hidden");
@@ -456,25 +465,53 @@ function setWatermark(text) {
 const store = (() => {
   const mem = new Map();
   const gone = new Set();
+  const pending = new Map();           // writes that did not reach the device yet
   let dbp = null;
-  try {
-    dbp = new Promise((res, rej) => {
-      const r = indexedDB.open("mele-review", 1);
-      r.onupgradeneeded = () => r.result.createObjectStore("work");
-      r.onsuccess = () => res(r.result);
-      r.onerror = () => rej(r.error);
-    }).catch(() => null);
-  } catch { dbp = Promise.resolve(null); }
-  async function tx(mode, fn) {
-    const db = await dbp;
-    if (!db) return null;
+  const open = () => new Promise((res, rej) => {
+    const r = indexedDB.open("mele-review", 1);
+    r.onupgradeneeded = () => r.result.createObjectStore("work");
+    r.onsuccess = () => { const d = r.result; d.onclose = () => { dbp = null; }; d.onversionchange = () => { d.close(); dbp = null; }; res(d); };
+    r.onerror = () => rej(r.error);
+    r.onblocked = () => rej(new Error("blocked"));
+  });
+  const getDb = () => { if (!dbp) { try { dbp = open().catch(() => { dbp = null; return null; }); } catch { dbp = Promise.resolve(null); } } return dbp; };
+  const once = async (mode, fn) => {
+    const db = await getDb();
+    if (!db) throw new Error("nodb");
     return new Promise((res, rej) => {
       const t = db.transaction("work", mode);
       const out = fn(t.objectStore("work"));
       t.oncomplete = () => res(out && "result" in out ? out.result : undefined);
       t.onerror = () => rej(t.error);
-    }).catch(() => null);
+      t.onabort = () => rej(t.error || new Error("abort"));
+    });
+  };
+  // Safari can drop the database connection while the page sits in the background. Reopen and try again.
+  async function tx(mode, fn) {
+    try { return await once(mode, fn); }
+    catch { dbp = null; try { return await once(mode, fn); } catch { dbp = null; return null; } }
   }
+  const warn = on => {
+    let el = document.getElementById("save-warn");
+    if (!on) { el?.remove(); return; }
+    if (el) return;
+    el = document.createElement("div"); el.id = "save-warn"; el.setAttribute("role", "alert");
+    el.textContent = "Your work isn't saving on this device right now. Keep this page open and don't refresh. It will keep trying.";
+    el.style.cssText = "position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:200;background:#6d2318;color:#fff;padding:12px 14px;border-radius:10px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.3)";
+    document.body.append(el);
+  };
+  async function flush() {
+    for (const [k, v] of [...pending]) {
+      let ok = true;
+      try { await once("readwrite", s => s.put(v, k)); } catch { dbp = null; try { await once("readwrite", s => s.put(v, k)); } catch { ok = false; dbp = null; } }
+      if (ok && pending.get(k) === v) pending.delete(k);
+    }
+    warn(pending.size > 0);
+  }
+  setInterval(() => { if (pending.size) flush(); }, 4000);
+  for (const ev of ["online", "pageshow", "focus"]) window.addEventListener(ev, () => { if (pending.size) flush(); });
+  document.addEventListener("visibilitychange", () => { if (pending.size) flush(); });
+  try { navigator.storage?.persist?.(); } catch {}
   const range = prefix => IDBKeyRange.bound(prefix, prefix + "￿");
   return {
     async get(key) {
@@ -484,7 +521,15 @@ const store = (() => {
       if (v !== undefined && v !== null) mem.set(key, v);
       return v ?? null;
     },
-    async set(key, val) { gone.delete(key); mem.set(key, val); await tx("readwrite", s => s.put(val, key)); },
+    async set(key, val) {
+      gone.delete(key); mem.set(key, val);
+      let ok = true;
+      try { await once("readwrite", s => s.put(val, key)); }
+      catch { dbp = null; try { await once("readwrite", s => s.put(val, key)); } catch { ok = false; dbp = null; } }
+      if (ok) { if (pending.get(key) === val) pending.delete(key); if (!pending.size) warn(false); }
+      else { pending.set(key, val); warn(true); }
+    },
+    flush,
     async keys(prefix) { return (await this.getAll(prefix)).map(([k]) => k); },
     // every [key, value] whose key starts with prefix
     async getAll(prefix) {
@@ -525,20 +570,37 @@ async function firebaseBackend() {
   ]);
   const fbApp = fa.initializeApp(cfg);
   const auth = au.getAuth(fbApp);
-  const db = fs.getFirestore(fbApp);
+  // Keep a copy of the exams on this device so they open without internet.
+  let db;
+  try { db = fs.initializeFirestore(fbApp, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); }
+  catch { db = fs.getFirestore(fbApp); }
   const provider = new au.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
   au.getRedirectResult(auth).catch(e => { pendingAuthError = e; showAuthError(e); });
 
+  // Remember, on this device only, that this email was allowed, so a dropped connection doesn't lock the person out.
+  // Online checks always win: if you remove someone, the next time they're online the flag is cleared.
+  const okKey = email => `mele-ok:${email}`;
+  const readOk = email => { try { return localStorage.getItem(okKey(email)); } catch { return null; } };
+  const writeOk = (email, v) => { try { v ? localStorage.setItem(okKey(email), v) : localStorage.removeItem(okKey(email)); } catch {} };
+  const netErr = e => !e || !e.code || ["unavailable", "deadline-exceeded", "cancelled", "failed-precondition", "internal", "unknown"].includes(e.code) || navigator.onLine === false;
   async function access(user) {
     const email = (user.email || "").toLowerCase();
-    let owner = false;
-    try { await fs.getDocs(fs.query(fs.collection(db, "allowed"), fs.limit(1))); owner = true; } catch { owner = false; }
-    if (owner) return { allowed: true, owner: true };
-    try {
-      const snap = await fs.getDoc(fs.doc(db, "allowed", email));
-      return { allowed: snap.exists(), owner: false };
-    } catch { return { allowed: false, owner: false }; }
+    let denied = false;
+    try { await fs.getDocsFromServer(fs.query(fs.collection(db, "allowed"), fs.limit(1))); writeOk(email, "owner"); return { allowed: true, owner: true }; }
+    catch (e) { if (!netErr(e)) denied = true; }
+    if (denied) {
+      try {
+        const snap = await fs.getDocFromServer(fs.doc(db, "allowed", email));
+        writeOk(email, snap.exists() ? "ok" : null);
+        return { allowed: snap.exists(), owner: false };
+      } catch (e) {
+        if (!netErr(e)) { writeOk(email, null); return { allowed: false, owner: false }; }
+      }
+    }
+    // couldn't reach the server: fall back to the last online answer
+    const mem = readOk(email);
+    return { allowed: !!mem, owner: mem === "owner", offline: true };
   }
   return {
     mode: "firebase",
@@ -760,6 +822,11 @@ async function homeScreen() {
     return;
   }
   S.examList = exams;
+  // warm the on-device copy so every set opens without internet later
+  if (S.backend.mode === "firebase") {
+    if (!S.contentCache) S.contentCache = new Map();
+    for (const ex of exams) if (!S.contentCache.has(ex.id)) S.backend.loadExam(ex.id).then(c => S.contentCache.set(ex.id, c)).catch(() => {});
+  }
   if (!exams.length) {
     browse.replaceChildren(h("p", { class: "empty" }, S.owner ? "No problem sets yet. Tap the people icon, then import an exam file." : "No problem sets have been added yet."));
     searchBox.classList.add("hidden");
@@ -1176,6 +1243,9 @@ function renderExam() {
   const pager = h("nav", { class: "pager", "aria-label": "Pages" }, h("div", { class: "pager-row" }, prev, select, next));
 
   screen(header, chips, progress, main, pager);
+  const setTop = () => document.documentElement.style.setProperty("--topbar-h", header.offsetHeight + "px");
+  setTop();
+  if (window.ResizeObserver) { S.ro?.disconnect(); S.ro = new ResizeObserver(setTop); S.ro.observe(header); }
   for (const i of page.idx) main.append(problemCard(ex, ex.questions[i]));
   updateExamProgress();
   const cur = chips.querySelector('[aria-current="true"]');
@@ -1301,12 +1371,23 @@ function problemCard(ex, q) {
   const ta = h("textarea", { id: `typed-${q.section.replace(/\W+/g, "-")}-${q.num}`, placeholder: "Type your solution or notes" });
   const typed = h("details", { class: "typed" }, h("summary", {}, "Type instead"), ta);
 
-  const card = h("article", { class: "problem", "aria-label": `Problem ${q.num}`, "data-key": qKey(q) },
-    h("div", { class: "problem-head" }, h("span", { class: "qnum" }, String(q.num)), h("span", { class: "qsec" }, q.section)),
+  const pinBtn = h("button", { class: "pin-btn", type: "button", "aria-pressed": "false", title: "Keep this question on screen while you scroll to write", "aria-label": `Lock problem ${q.num} in view`, html: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l-1 6 3 3v2H7v-2l3-3z"/><path d="M12 14v7"/></svg><span>Lock</span>` });
+  const stick = h("div", { class: "q-stick" },
+    h("div", { class: "problem-head" }, h("span", { class: "qnum" }, String(q.num)), h("span", { class: "qsec" }, q.section), pinBtn),
     h("div", { class: "qtext", html: rich(q.text) }),
     ...(q.notes || []).map(n => h("div", { class: "qnote", html: rich(n) })),
     h("div", { class: `choices${long ? " long" : ""}` }, ...choiceBtns),
-    h("div", { class: "answer-row" }, revealBtn, answerTag, verdict),
+    h("div", { class: "answer-row" }, revealBtn, answerTag, verdict));
+  pinBtn.addEventListener("click", () => {
+    const on = !stick.classList.contains("pinned");
+    document.querySelectorAll(".q-stick.pinned").forEach(el => el.classList.remove("pinned"));
+    document.querySelectorAll(".pin-btn").forEach(b => { b.setAttribute("aria-pressed", "false"); b.querySelector("span").textContent = "Lock"; });
+    if (on) { stick.classList.add("pinned"); pinBtn.setAttribute("aria-pressed", "true"); pinBtn.querySelector("span").textContent = "Locked"; }
+    toast(on ? "Question locked. It stays at the top while you write." : "Question unlocked.");
+  });
+
+  const card = h("article", { class: "problem", "aria-label": `Problem ${q.num}`, "data-key": qKey(q) },
+    stick,
     h("div", { class: "pad-wrap" },
       h("div", { class: "pad-label" }, h("b", {}, "Solution"), h("span", { class: "pad-actions" }, undo, redo, more, clear)),
       padEl, typed));
@@ -1318,7 +1399,7 @@ function problemCard(ex, q) {
   more.addEventListener("click", () => { work.h = Math.min(3, +(work.h + 0.4).toFixed(2)); pad.resize(true); save(); toast("Added more writing space"); });
   armed(clear, "Clear", async () => { pad.clearAll(); work.h = 0.75; pad.resize(true); hint.classList.remove("hidden"); save(); });
   let tt;
-  ta.addEventListener("input", () => { work.text = ta.value; clearTimeout(tt); tt = setTimeout(save, 400); });
+  ta.addEventListener("input", () => { work.text = ta.value; save(); });
 
   store.get(key).then(v => {
     if (v) work = Object.assign(work, v);
@@ -1864,6 +1945,9 @@ async function main() {
   });
 }
 main();
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+}
 </script>
 </body>
 </html>
