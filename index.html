@@ -194,15 +194,11 @@ sup, sub { font-size: .72em; line-height: 0; }
 .pad-label { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
 .pad-label b { font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
 .pad-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.pad-view { min-width: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; border-radius: 8px; }
 .pad {
   position: relative; border: 1px solid var(--rule); border-radius: 8px; overflow: hidden;
   background: #ffffff;
-  touch-action: pan-x pan-y;
+  touch-action: pan-y pinch-zoom;
 }
-.zoom-ctl { display: inline-flex; align-items: center; gap: 4px; margin-right: 6px; }
-.zoom-ctl .btn { min-width: 36px; }
-.zoom-ctl .zpct { min-width: 52px; font-variant-numeric: tabular-nums; }
 .pad.writing { touch-action: none; }
 .pad canvas { display: block; width: 100%; height: 100%; }
 .pad-hint { position: absolute; left: 12px; bottom: 10px; font-size: 13px; color: #9aa3ae; pointer-events: none; }
@@ -311,7 +307,7 @@ mark { background: #ffe9a8; color: inherit; border-radius: 2px; padding: 0 1px; 
 /* formula sheets */
 .fx-open { overflow: hidden; }
 .fx-open #watermark, .fx-docked #watermark { z-index: 95; }
-#app { padding-right: var(--fx-pad-r, 0px); padding-bottom: var(--fx-pad-b, 0px); touch-action: pan-x pan-y; }
+#app { padding-right: var(--fx-pad-r, 0px); padding-bottom: var(--fx-pad-b, 0px); }
 .toast { margin-bottom: var(--fx-pad-b, 0px); }
 .fx-docked .fx-open-btn { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
 .fx-body { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
@@ -766,7 +762,7 @@ function saveTool() {
   try { const t = S.tool; localStorage.setItem("mele-tool-v1", JSON.stringify({ color: t.color, penW: t.penW, eraserW: t.eraserW, finger: t.finger, selMode: t.selMode })); } catch {}
 }
 const S = {
-  backend: null, user: null, owner: false, padZoom: 1, pinching: null,
+  backend: null, user: null, owner: false,
   exam: null, pages: [], pageIndex: 0,
   tool: Object.assign({ kind: "pen", color: "#1b2430", penW: 44, eraserW: 400, finger: false, selMode: "rect" }, loadTool()),
   hinted: {},
@@ -1762,11 +1758,6 @@ function problemCard(ex, q) {
   const redo = h("button", { class: "btn small", type: "button" }, "Redo");
   const more = h("button", { class: "btn small", type: "button" }, "More space");
   const clear = h("button", { class: "btn small danger", type: "button" }, "Clear");
-  const zOut = h("button", { class: "btn small", type: "button", "aria-label": "Zoom out the solution area", title: "Zoom out (or pinch)" }, "−");
-  const zIn = h("button", { class: "btn small", type: "button", "aria-label": "Zoom in the solution area", title: "Zoom in (or pinch)" }, "+");
-  const zPct = h("button", { class: "btn small zpct", type: "button", "data-zoom-label": "", "aria-label": "Reset solution zoom to 100%", title: "Tap to reset" }, `${Math.round(S.padZoom * 100)}%`);
-  const zoomCtl = h("span", { class: "zoom-ctl" }, zOut, zPct, zIn);
-  const padView = h("div", { class: "pad-view" }, padEl);
   const ta = h("textarea", { id: `typed-${q.section.replace(/\W+/g, "-")}-${q.num}`, placeholder: "Type your solution or notes" });
   const typed = h("details", { class: "typed" }, h("summary", {}, "Type instead"), ta);
 
@@ -1788,15 +1779,11 @@ function problemCard(ex, q) {
   const card = h("article", { class: "problem", "aria-label": `Problem ${q.num}`, "data-key": qKey(q) },
     stick,
     h("div", { class: "pad-wrap" },
-      h("div", { class: "pad-label" }, h("b", {}, "Solution"), h("span", { class: "pad-actions" }, zoomCtl, undo, redo, more, clear)),
-      padView, typed));
+      h("div", { class: "pad-label" }, h("b", {}, "Solution"), h("span", { class: "pad-actions" }, undo, redo, more, clear)),
+      padEl, typed));
 
   const pad = new Pad(padEl, () => work, () => { hint.classList.toggle("hidden", work.strokes.length > 0); save(); });
   S.pads.push(pad);
-  const zoomBy = f => { const r = padEl.getBoundingClientRect(); zoomAround(pad, f(S.padZoom), r.left + Math.min(r.width, innerWidth) / 2, (Math.max(r.top, 0) + Math.min(r.bottom, innerHeight)) / 2); };
-  zOut.addEventListener("click", () => zoomBy(z => z - 0.5));
-  zIn.addEventListener("click", () => zoomBy(z => z + 0.5));
-  zPct.addEventListener("click", () => zoomBy(() => 1));
   undo.addEventListener("click", () => pad.undo());
   redo.addEventListener("click", () => pad.redo());
   more.addEventListener("click", () => { work.h = Math.min(3, +(work.h + 0.4).toFixed(2)); pad.resize(true); save(); toast("Added more writing space"); });
@@ -1949,72 +1936,6 @@ function strokeBB(s) {
   if (!b) { const r = bboxOf(s.p), e = s.w / 2; b = { x0: r.x0 - e, y0: r.y0 - e, x1: r.x1 + e, y1: r.y1 + e }; bbCache.set(s, b); }
   return b;
 }
-/* ---------- zoom of the solution areas: one zoom level for every solution box on the page ---------- */
-const PAD_ZOOM_MAX = 3;
-function setPadZoom(z, live) {
-  z = Math.min(PAD_ZOOM_MAX, Math.max(1, Math.round(z * 100) / 100));
-  S.padZoom = z;
-  for (const p of S.pads) p.setZoom(live);
-  document.querySelectorAll("[data-zoom-label]").forEach(el => { el.textContent = `${Math.round(z * 100)}%`; });
-}
-// zoom so that the spot of `pad` at (frx, fry) (fractions of its width) ends up under screen point (mx, my)
-function zoomAround(pad, z, mx, my, live, frx, fry) {
-  const r = pad.el.getBoundingClientRect();
-  if (frx === undefined) { frx = (mx - r.left) / r.width; fry = (my - r.top) / r.width; }
-  setPadZoom(z, live);
-  const r2 = pad.el.getBoundingClientRect();
-  pad.view.scrollLeft += (r2.left + frx * r2.width) - mx;
-  for (const p of S.pads) p.view.scrollLeft = pad.view.scrollLeft;
-  window.scrollBy(0, (r2.top + fry * r2.width) - my);
-}
-
-// Two fingers anywhere on the problem page zoom the solution boxes. The question never changes size.
-function installPinch() {
-  const root = document.getElementById("app");
-  const fingers = e => [...e.touches].filter(x => x.touchType !== "stylus");
-  const visibleBand = () => {   // part of the screen where the solution can be seen: below the top bars/locked question, above the pager
-    const pinned = document.querySelector(".q-stick.pinned"), bar = document.querySelector(".topbar"), pager = document.querySelector(".pager");
-    const top = Math.max(pinned ? pinned.getBoundingClientRect().bottom : 0, bar ? bar.getBoundingClientRect().bottom : 0);
-    const bottom = pager ? pager.getBoundingClientRect().top : innerHeight;
-    return [top, Math.max(top + 40, bottom)];
-  };
-  function begin(d) {
-    if (!S.pads.length) return;
-    const [a, b] = d, mx = (a.clientX + b.clientX) / 2, my = (a.clientY + b.clientY) / 2;
-    const [vt, vb] = visibleBand();
-    let pad = null, best = -1;
-    for (const p of S.pads) {
-      const r = p.el.getBoundingClientRect();
-      if (mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom) { pad = p; break; }
-      const vis = Math.max(0, Math.min(r.bottom, vb) - Math.max(r.top, vt));
-      if (vis > best) { best = vis; pad = p; }
-    }
-    const r = pad.el.getBoundingClientRect();
-    const ax = Math.min(Math.max(mx, r.left), r.right), ay = Math.min(Math.max(my, Math.max(r.top, vt)), Math.min(r.bottom, vb));
-    for (const p of S.pads) { p.cancelOp(); p.zooming = true; }
-    S.pinching = { pad, d0: Math.max(hyp(a.clientX, a.clientY, b.clientX, b.clientY), 1), z0: S.padZoom, mx0: mx, my0: my, ax, ay, frx: (ax - r.left) / r.width, fry: (ay - r.top) / r.width };
-  }
-  root.addEventListener("touchstart", e => {
-    const d = fingers(e);
-    if (d.length === 2 && !S.pinching && S.pads.length && !S.pads.some(p => p.op && p.op.pen) && Date.now() - Math.max(0, ...S.pads.map(p => p.lastPen)) > 1500) begin(d);
-    if (S.pinching) e.preventDefault();
-  }, { passive: false });
-  root.addEventListener("touchmove", e => {
-    const pn = S.pinching;
-    if (!pn) return;
-    e.preventDefault();
-    const d = fingers(e);
-    if (d.length < 2) return;
-    const [a, b] = d, mx = (a.clientX + b.clientX) / 2, my = (a.clientY + b.clientY) / 2;
-    zoomAround(pn.pad, pn.z0 * hyp(a.clientX, a.clientY, b.clientX, b.clientY) / pn.d0, pn.ax + (mx - pn.mx0), pn.ay + (my - pn.my0), true, pn.frx, pn.fry);
-  }, { passive: false });
-  const end = e => {
-    if (S.pinching && e.touches.length === 0) { S.pinching = null; for (const p of S.pads) { p.zooming = false; p.resize(true); } }
-  };
-  root.addEventListener("touchend", end); root.addEventListener("touchcancel", end);
-  for (const g of ["gesturestart", "gesturechange", "gestureend"]) root.addEventListener(g, e => e.preventDefault());   // Safari: no whole-page zoom
-}
-
 class Pad {
   constructor(el, getWork, onChange) {
     this.el = el; this.getWork = getWork; this.onChange = onChange;
@@ -2050,36 +1971,8 @@ class Pad {
     };
     c.addEventListener("touchstart", stopStylus, { passive: false });
     c.addEventListener("touchmove", stopStylus, { passive: false });
-    // trackpad pinch / ctrl + wheel
-    c.addEventListener("wheel", e => {
-      if (!e.ctrlKey) return;
-      e.preventDefault();
-      zoomAround(this, S.padZoom * Math.exp(-e.deltaY * 0.01), e.clientX, e.clientY);
-    }, { passive: false });
-    this.view = el.parentElement;
-    this.zooming = false;
-    this.applyZoomWidth();
   }
   destroy() { this.ro.disconnect(); }
-  applyZoomWidth() {
-    this.el.style.width = `${S.padZoom * 100}%`;
-    if (S.padZoom <= 1 && this.view) this.view.scrollLeft = 0;
-  }
-  setZoom(live) {
-    this.applyZoomWidth();
-    this.zooming = !!live;
-    const w = Math.round(this.el.clientWidth);
-    this.el.style.height = Math.round(w * this.getWork().h) + "px";
-    if (!live) this.resize(true);
-  }
-  cancelOp() {
-    const op = this.op;
-    if (!op) return;
-    this.op = null; this.hover = null;
-    if (op.type === "erase" && op.pushed) this.undo();
-    if (op.type === "move" || op.type === "scale") this.tf = { ax: 0, ay: 0, sc: 1, dx: 0, dy: 0 };
-    this.redraw();
-  }
   setFinger(on) { this.el.classList.toggle("writing", !!on); }
   updateBar() {
     const on = S.tool.kind === "select", has = !!this.sel;
@@ -2104,14 +1997,10 @@ class Pad {
   /* --- sizing and drawing --- */
   resize(force) {
     const w = Math.round(this.el.clientWidth);
-    if (!w) return;
-    if (this.zooming) { this.el.style.height = Math.round(w * this.getWork().h) + "px"; return; } // sharpen once the pinch ends
-    if (!force && w === this.w) return;
+    if (!w || (!force && w === this.w)) return;
     this.w = w;
     const hgt = Math.round(w * this.getWork().h);
-    let dpr = Math.min(window.devicePixelRatio || 1, 3);
-    const maxPixels = 6e6;   // iPad Safari runs out of canvas memory far above this
-    if (w * hgt * dpr * dpr > maxPixels) dpr = Math.max(1, Math.sqrt(maxPixels / (w * hgt)));
+    const dpr = Math.min(window.devicePixelRatio || 1, 3);
     this.el.style.height = hgt + "px";
     for (const c of [this.canvas, this.fx]) { c.width = Math.round(w * dpr); c.height = Math.round(hgt * dpr); }
     this.dpr = dpr;
@@ -2204,7 +2093,7 @@ class Pad {
       c.fillStyle = "#fff"; c.fill(); c.lineWidth = 2 * upp; c.stroke();
     }
     if (this.hover && (S.tool.kind === "eraser" || (op && op.type === "erase"))) {
-      c.beginPath(); c.arc(this.hover[0], this.hover[1], S.tool.eraserW / 2 / S.padZoom, 0, Math.PI * 2);
+      c.beginPath(); c.arc(this.hover[0], this.hover[1], S.tool.eraserW / 2, 0, Math.PI * 2);
       c.fillStyle = "rgba(27,36,48,.06)"; c.fill();
       c.strokeStyle = "rgba(27,36,48,.55)"; c.lineWidth = 1.5 * upp; c.stroke();
     }
@@ -2235,7 +2124,6 @@ class Pad {
 
   /* --- pointer handling --- */
   down(e) {
-    if (S.pinching) return;
     if (e.pointerType === "pen") this.lastPen = Date.now();
     if (e.pointerType === "touch" && (!S.tool.finger || Date.now() - this.lastPen < 1500)) return; // scroll / palm
     if ((e.button > 0 && e.button !== 5) || this.op) return;
@@ -2244,7 +2132,7 @@ class Pad {
     const pt = this.pt(e), id = e.pointerId;
     const kind = (e.button === 5 || (e.buttons & 32)) ? "eraser" : S.tool.kind; // pen eraser end
     if (kind === "pen" || kind === "shape") {
-      this.op = { type: "draw", id, pen: e.pointerType === "pen", shape: kind === "shape", s: { k: "p", c: S.tool.color, w: S.tool.penW / S.padZoom, p: pt.slice() } };
+      this.op = { type: "draw", id, shape: kind === "shape", s: { k: "p", c: S.tool.color, w: S.tool.penW, p: pt.slice() } };
       this.drawStroke(this.op.s);
     } else if (kind === "eraser") {
       this.op = { type: "erase", id, last: pt, pushed: false };
@@ -2319,7 +2207,7 @@ class Pad {
 
   /* --- eraser: cuts strokes apart where the eraser touches them --- */
   eraseTo(a, b) {
-    const R = S.tool.eraserW / 2 / S.padZoom;
+    const R = S.tool.eraserW / 2;
     const n = Math.max(1, Math.ceil(hyp(a[0], a[1], b[0], b[1]) / (R / 2)));
     const centers = [];
     for (let i = 1; i <= n; i++) centers.push([a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n]);
@@ -2446,7 +2334,6 @@ async function main() {
     if (lastEmail !== state.user.email) { lastEmail = state.user.email; homeScreen(); }
   });
 }
-installPinch();
 main();
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
