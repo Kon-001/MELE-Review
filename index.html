@@ -306,7 +306,35 @@ mark { background: #ffe9a8; color: inherit; border-radius: 2px; padding: 0 1px; 
 .admin-exam-top small { display: block; color: var(--muted); }
 /* formula sheets */
 .fx-open { overflow: hidden; }
-.fx-open #watermark { z-index: 95; }
+.fx-open #watermark, .fx-docked #watermark { z-index: 95; }
+#app { padding-right: var(--fx-pad-r, 0px); padding-bottom: var(--fx-pad-b, 0px); }
+.toast { margin-bottom: var(--fx-pad-b, 0px); }
+.fx-docked .fx-open-btn { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.fx-body { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.fx-layer.docked { inset: auto; z-index: 60; box-shadow: 0 0 22px rgba(0,0,0,.28); }
+.fx-layer.docked.bottom { left: 0; right: 0; bottom: 0; height: var(--fx-size); flex-direction: column; border-top: 3px solid var(--accent); }
+.fx-layer.docked.right { top: 0; right: 0; bottom: 0; width: var(--fx-size); flex-direction: row; border-left: 3px solid var(--accent); }
+.fx-grip { flex: none; display: grid; place-items: center; touch-action: none; background: var(--paper); cursor: ns-resize; }
+.fx-grip::before { content: ""; width: 54px; height: 5px; border-radius: 3px; background: var(--rule); }
+.fx-layer.bottom .fx-grip { height: 22px; border-bottom: 1px solid var(--rule); }
+.fx-layer.right .fx-grip { width: 22px; cursor: ew-resize; border-right: 1px solid var(--rule); }
+.fx-layer.right .fx-grip::before { width: 5px; height: 54px; }
+.fx-grip:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.fx-layer.docked .fx-head { padding: 6px 10px; }
+.fx-layer.docked .fx-chooser { padding-top: 54px; }
+.fx-layer.docked .fx-scroll { padding: 8px; }
+.fx-layer.docked .fx-foot { padding: 6px 10px; }
+.fx-dock-btn { white-space: nowrap; }
+.admin-block.collapsible { display: block; padding: 0; }
+.admin-block.collapsible > summary { list-style: none; display: flex; align-items: center; gap: 8px; padding: 16px 18px; cursor: pointer; min-height: 56px; }
+.admin-block.collapsible > summary::-webkit-details-marker { display: none; }
+.admin-block.collapsible > summary h3 { margin: 0; flex: 1; }
+.admin-block.collapsible > summary::after { content: "▾"; color: var(--muted); font-size: 18px; transition: transform .15s; }
+.admin-block.collapsible[open] > summary::after { transform: rotate(180deg); }
+.admin-block.collapsible[open] > summary { border-bottom: 1px solid var(--rule); }
+.admin-body { display: grid; gap: 12px; padding: 16px 18px 18px; }
+.admin-search { width: 100%; height: 42px; border-radius: 8px; border: 1px solid var(--rule); background: var(--paper); padding: 0 12px; font-size: 16px; color: var(--ink); }
+.admin-count { color: var(--muted); font-weight: 500; font-size: 15px; }
 .fx-layer { position: fixed; inset: 0; z-index: 90; background: var(--desk); display: flex; flex-direction: column; }
 .fx-head { background: var(--paper); border-bottom: 1px solid var(--rule); padding: calc(8px + var(--safe-top)) 12px 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .fx-head b { font-size: 16px; margin-right: 2px; }
@@ -316,7 +344,7 @@ mark { background: #ffe9a8; color: inherit; border-radius: 2px; padding: 0 1px; 
 .fx-zoom .tool { min-width: 38px; font-size: 18px; }
 .fx-zoom .mono { min-width: 46px; text-align: center; font-size: 13px; color: var(--muted); }
 .fx-scroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; padding: 12px; }
-.fx-pages { margin: 0 auto; min-width: 100%; max-width: none; display: grid; gap: 12px; align-content: start; }
+.fx-pages { margin: 0 auto; max-width: none; display: grid; gap: 12px; align-content: start; }
 .fx-page { position: relative; background: #fff; border: 1px solid var(--rule); box-shadow: 0 1px 4px rgba(0,0,0,.12); aspect-ratio: 1 / 1.414; width: 100%; }
 .fx-page canvas { display: block; width: 100%; height: 100%; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
 .fx-msg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; text-align: center; padding: 12px; }
@@ -354,7 +382,7 @@ mark { background: #ffe9a8; color: inherit; border-radius: 2px; padding: 0 1px; 
 
 /* pager */
 .pager {
-  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  position: fixed; left: 0; right: var(--fx-pad-r, 0px); bottom: var(--fx-pad-b, 0px); z-index: 30;
   background: color-mix(in srgb, var(--paper) 95%, transparent);
   backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
   border-top: 1px solid var(--rule); padding: 10px 16px calc(10px + var(--safe-bottom));
@@ -746,7 +774,11 @@ const workKey = (examId, q) => `${userKey()}|${examId}|${qKey(q)}`;
 const metaKey = examId => `${userKey()}|${examId}|~meta`;
 
 /* ---------- screens ---------- */
-function screen(...nodes) { S.pads.forEach(p => p.destroy()); S.pads = []; app.replaceChildren(...nodes); window.scrollTo(0, 0); }
+function screen(...nodes) {
+  S.pads.forEach(p => p.destroy()); S.pads = []; app.replaceChildren(...nodes); window.scrollTo(0, 0);
+  // a docked formula panel belongs to the problem set; leave it behind when you leave
+  if (fLayer && fLayer._docked && !document.querySelector(".pager")) closeFormulas();
+}
 
 function messageScreen(title, body, actions = []) {
   screen(h("div", { class: "center-screen" }, h("div", { class: "panel" },
@@ -1128,36 +1160,81 @@ function closeFormulas() {
   if (!fLayer) return;
   fLayer._stop && fLayer._stop();
   fLayer.remove(); fLayer = null;
-  document.documentElement.classList.remove("fx-open");
+  const r = document.documentElement;
+  r.classList.remove("fx-open", "fx-docked");
+  for (const v of ["--fx-size", "--fx-pad-b", "--fx-pad-r"]) r.style.removeProperty(v);
 }
 function formulasButton() {
-  return h("button", { class: "btn small fx-open-btn", type: "button", "aria-label": "Open formula sheets", title: "Formula sheets", onclick: openFormulas,
+  return h("button", { class: "btn small fx-open-btn", type: "button", "aria-label": "Formula sheets", title: "Formula sheets", onclick: () => (fLayer ? closeFormulas() : openFormulas()),
     html: `<span style="display:inline-flex;width:16px;height:16px">${ICON.book}</span><span>Formulas</span>` });
 }
 async function openFormulas() {
   if (fLayer) return;
-  const layer = h("div", { class: "fx-layer", role: "dialog", "aria-label": "Formula sheets" });
-  fLayer = layer;
-  document.documentElement.classList.add("fx-open");
+  // Inside a problem set the viewer is a resizable panel; on the home screen it fills the page.
+  const docked = !!document.querySelector(".pager");
+  const layer = h("div", { class: `fx-layer${docked ? " docked" : ""}`, role: "dialog", "aria-label": "Formula sheets" });
+  fLayer = layer; layer._docked = docked;
+  const root = document.documentElement;
+  root.classList.add(docked ? "fx-docked" : "fx-open");
   let alive = true, runId = 0, sheets = [], current = null, zoom = 1;
-  try { zoom = Math.min(3, Math.max(1, +localStorage.getItem("mele-fx-zoom") || 1)); } catch {}
-  layer._stop = () => { alive = false; runId++; io && io.disconnect(); };
+  try { zoom = Math.min(3, Math.max(0.5, +localStorage.getItem("mele-fx-zoom") || 1)); } catch {}
+  layer._stop = () => { alive = false; runId++; io && io.disconnect(); window.removeEventListener("resize", onWinResize); };
 
-  const closeBtn = h("button", { class: "icon-btn", type: "button", "aria-label": "Close formulas", html: ICON.back, onclick: closeFormulas });
+  // dock state: which edge, and how big on each edge
+  let dock = { side: (innerWidth > innerHeight && innerWidth >= 900) ? "right" : "bottom", bottom: 0, right: 0 };
+  try { const d = JSON.parse(localStorage.getItem("mele-fx-dock") || "null"); if (d && (d.side === "bottom" || d.side === "right")) dock = Object.assign(dock, d); } catch {}
+  const clampSize = (side, v) => side === "bottom"
+    ? Math.round(Math.min(Math.max(v || innerHeight * 0.42, 170), innerHeight * 0.85))
+    : Math.round(Math.min(Math.max(v || innerWidth * 0.42, 300), innerWidth * 0.75));
+  const saveDock = () => { try { localStorage.setItem("mele-fx-dock", JSON.stringify(dock)); } catch {} };
+  const dockBtn = h("button", { class: "btn small fx-dock-btn", type: "button" });
+  function applyDock() {
+    const side = dock.side, size = clampSize(side, dock[side]);
+    layer.classList.toggle("bottom", side === "bottom"); layer.classList.toggle("right", side === "right");
+    root.style.setProperty("--fx-size", size + "px");
+    root.style.setProperty("--fx-pad-b", side === "bottom" ? size + "px" : "0px");
+    root.style.setProperty("--fx-pad-r", side === "right" ? size + "px" : "0px");
+    dockBtn.textContent = side === "bottom" ? "Dock right" : "Dock bottom";
+    grip.setAttribute("aria-orientation", side === "bottom" ? "horizontal" : "vertical");
+    return size;
+  }
+  const grip = h("div", { class: "fx-grip", role: "separator", tabindex: "0", "aria-label": "Drag to resize the formula panel" });
+  const onWinResize = () => { if (docked) applyDock(); };
+  if (docked) {
+    let drag = false;
+    grip.addEventListener("pointerdown", e => { drag = true; grip.setPointerCapture(e.pointerId); e.preventDefault(); });
+    grip.addEventListener("pointermove", e => {
+      if (!drag) return;
+      dock[dock.side] = clampSize(dock.side, dock.side === "bottom" ? innerHeight - e.clientY : innerWidth - e.clientX);
+      applyDock();
+    });
+    const end = () => { if (drag) { drag = false; saveDock(); } };
+    grip.addEventListener("pointerup", end); grip.addEventListener("pointercancel", end);
+    grip.addEventListener("keydown", e => {
+      const k = dock.side === "bottom" ? { ArrowUp: 40, ArrowDown: -40 } : { ArrowLeft: 40, ArrowRight: -40 };
+      if (k[e.key] === undefined) return;
+      e.preventDefault(); dock[dock.side] = clampSize(dock.side, applyDock() + k[e.key]); applyDock(); saveDock();
+    });
+    dockBtn.addEventListener("click", () => { dock.side = dock.side === "bottom" ? "right" : "bottom"; applyDock(); saveDock(); });
+    window.addEventListener("resize", onWinResize);
+  }
+
+  const closeBtn = h("button", { class: "icon-btn", type: "button", "aria-label": "Close formulas", html: docked ? '<span style="font-size:22px;line-height:1">✕</span>' : ICON.back, onclick: closeFormulas });
   const chooseLbl = h("span", {}, "Choose a formula sheet");
   const chooseBtn = h("button", { class: "btn fx-choose", type: "button", "aria-haspopup": "dialog" }, chooseLbl, h("span", { "aria-hidden": "true" }, "▾"));
   const pct = h("span", { class: "mono" }, "");
   const zOut = h("button", { class: "tool", type: "button", "aria-label": "Zoom out" }, "−");
   const zIn = h("button", { class: "tool", type: "button", "aria-label": "Zoom in" }, "+");
-  const head = h("div", { class: "fx-head" }, closeBtn, h("b", {}, "Formulas"), chooseBtn, h("span", { class: "fx-zoom" }, zOut, pct, zIn));
+  const head = h("div", { class: "fx-head" }, closeBtn, h("b", {}, "Formulas"), chooseBtn, h("span", { class: "fx-zoom" }, zOut, pct, zIn), ...(docked ? [dockBtn] : []));
   const pages = h("div", { class: "fx-pages" });
   const scroll = h("div", { class: "fx-scroll" }, pages);
   const jump = h("select", { "aria-label": "Go to page" });
   const prev = h("button", { class: "btn small", type: "button" }, "Prev");
   const next = h("button", { class: "btn small", type: "button" }, "Next");
   const foot = h("div", { class: "fx-foot hidden" }, prev, jump, next);
-  layer.append(head, scroll, foot);
+  layer.append(...(docked ? [grip] : []), h("div", { class: "fx-body" }, head, scroll, foot));
   document.body.append(layer);
+  if (docked) applyDock();
 
   let wrappers = [];
   const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? e.target._load() : e.target._free()), { root: scroll, rootMargin: "1600px 0px" }) : null;
@@ -1194,11 +1271,11 @@ async function openFormulas() {
     const ratio = keepPos && scroll.scrollHeight ? scroll.scrollTop / scroll.scrollHeight : null;
     pages.style.width = `${zoom * 100}%`;
     pct.textContent = `${Math.round(zoom * 100)}%`;
-    zOut.disabled = zoom <= 1; zIn.disabled = zoom >= 3;
+    zOut.disabled = zoom <= 0.5; zIn.disabled = zoom >= 3;
     if (ratio !== null) scroll.scrollTop = ratio * scroll.scrollHeight;
     try { localStorage.setItem("mele-fx-zoom", String(zoom)); } catch {}
   }
-  zOut.addEventListener("click", () => { zoom = Math.max(1, +(zoom - 0.25).toFixed(2)); applyZoom(true); });
+  zOut.addEventListener("click", () => { zoom = Math.max(0.5, +(zoom - 0.25).toFixed(2)); applyZoom(true); });
   zIn.addEventListener("click", () => { zoom = Math.min(3, +(zoom + 0.25).toFixed(2)); applyZoom(true); });
 
   const pageNow = () => {
@@ -1285,6 +1362,14 @@ async function adminScreen() {
   const sheetImportBtn = h("label", { class: "btn file-btn", for: "sheet-file" }, "Import formula sheet (.json)", sheetFile);
   const sheetStatus = h("div", { class: "muted", style: "font-size:14px", "aria-live": "polite" });
   const sheetRows = h("div", { class: "rows" }, h("div", { class: "empty" }, "Loading…"));
+  const examCount = h("span", { class: "admin-count" }), sheetCount = h("span", { class: "admin-count" });
+  const examSearch = h("input", { type: "search", class: "admin-search", placeholder: "Search exams", "aria-label": "Search exams", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
+  const sheetSearch = h("input", { type: "search", class: "admin-search", placeholder: "Search formula sheets", "aria-label": "Search formula sheets", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
+  const matches = (list, q, fields) => {
+    const toks = q.toLowerCase().split(/\s+/).filter(Boolean);
+    return toks.length ? list.filter(x => { const hay = fields(x).join(" ").toLowerCase(); return toks.every(t => hay.includes(t)); }) : list;
+  };
+  let examData = [], sheetData = [];
 
   async function loadPeople() {
     const list = await S.backend.listAllowed();
@@ -1295,9 +1380,10 @@ async function adminScreen() {
       return h("div", { class: "row" }, h("span", { class: "grow" }, p.email), rm);
     }) : [h("div", { class: "empty" }, "Nobody yet. Only you can open the problem sets.")]));
   }
-  async function loadExams() {
-    const list = await S.backend.listExams();
-    list.sort(byTitle);
+  async function loadExams() { examData = await S.backend.listExams(); examData.sort(byTitle); renderExams(); }
+  function renderExams() {
+    const list = matches(examData, examSearch.value, x => [x.title, x.id, subjOf(x), srcOf(x)]);
+    examCount.textContent = examData.length ? (list.length === examData.length ? `· ${examData.length}` : `· ${list.length} of ${examData.length}`) : "";
     exams.replaceChildren(...(list.length ? list.map(x => {
       const del = h("button", { class: "btn small danger", type: "button" }, "Delete");
       armed(del, "Delete", async () => { await S.backend.deleteExam(x.id); S.contentCache?.delete(x.id); toast(`Deleted ${x.title}`); loadExams(); });
@@ -1330,11 +1416,13 @@ async function adminScreen() {
         h("div", { class: "admin-exam-top" }, h("span", { class: "grow" }, x.title, h("small", { class: "mono" }, `${x.count} problems · id ${x.id}`)), del),
         h("div", { class: "rename-row" }, nameIn, renBtn),
         h("div", { class: "admin-exam-sel" }, h("label", { for: subjSel.id }, "Subject", subjSel), h("label", { for: srcSel.id }, "Source", srcSel)));
-    }) : [h("div", { class: "empty" }, "No exams yet. Import the .json file I gave you.")]));
+    }) : [h("div", { class: "empty" }, examData.length ? `No exams match "${examSearch.value.trim()}".` : "No exams yet. Import the .json file I gave you.")]));
   }
-  async function loadSheets() {
-    const list = await S.backend.listSheets();
-    list.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+  examSearch.addEventListener("input", renderExams);
+  async function loadSheets() { sheetData = await S.backend.listSheets(); sheetData.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true })); renderSheets(); }
+  function renderSheets() {
+    const list = matches(sheetData, sheetSearch.value, x => [x.title, x.id, x.subject || ""]);
+    sheetCount.textContent = sheetData.length ? (list.length === sheetData.length ? `· ${sheetData.length}` : `· ${list.length} of ${sheetData.length}`) : "";
     sheetRows.replaceChildren(...(list.length ? list.map(x => {
       const del = h("button", { class: "btn small danger", type: "button" }, "Delete");
       armed(del, "Delete", async () => { try { await S.backend.deleteSheet(x.id, x.count); toast(`Deleted ${x.title}`); } catch { toast("Couldn't delete. Check your connection."); } loadSheets(); });
@@ -1361,8 +1449,9 @@ async function adminScreen() {
         h("div", { class: "admin-exam-top" }, h("span", { class: "grow" }, x.title, h("small", { class: "mono" }, `${x.count} pages · id ${x.id}`)), del),
         h("div", { class: "rename-row" }, nameIn, renBtn),
         h("div", { class: "admin-exam-sel" }, h("label", { for: subjSel.id }, "Subject", subjSel)));
-    }) : [h("div", { class: "empty" }, "No formula sheets yet.")]));
+    }) : [h("div", { class: "empty" }, sheetData.length ? `No formula sheets match "${sheetSearch.value.trim()}".` : "No formula sheets yet.")]));
   }
+  sheetSearch.addEventListener("input", renderSheets);
   sheetFile.addEventListener("change", async () => {
     const f = sheetFile.files[0]; sheetFile.value = "";
     if (!f) return;
@@ -1409,20 +1498,24 @@ async function adminScreen() {
     } catch (e) { toast(e.message === "bad" ? "That isn't an exam file from this app." : "Import failed. Check that the Firestore rules are published."); }
   });
 
+  const open = JSON.parse(sessionStorage.getItem("mele-admin-open") || "{}");
+  const section = (key, title, countEl, ...body) => {
+    const d = h("details", { class: "admin-block collapsible" }, h("summary", {}, h("h3", {}, title, " ", countEl)), h("div", { class: "admin-body" }, ...body));
+    d.open = !!open[key];
+    d.addEventListener("toggle", () => { open[key] = d.open; try { sessionStorage.setItem("mele-admin-open", JSON.stringify(open)); } catch {} });
+    return d;
+  };
   screen(topbar({ title: "Manage", sub: "Who can open the problem sets", onBack: homeScreen }),
     h("main", { class: "home" },
-      h("section", { class: "admin-block" },
-        h("h3", {}, "People with access ", count),
+      section("people", "People with access", count,
         h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Add the Google account email of each person. They sign in with that account. Remove someone and they lose access right away."),
         emailBox, h("div", {}, addBtn), people),
-      h("section", { class: "admin-block" },
-        h("h3", {}, "Exams"),
+      section("exams", "Exams", examCount,
         h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Importing a file with the same id replaces that exam. People's own drawings stay on their devices. Choose each exam's subject and source here; it saves as soon as you change it."),
-        h("div", {}, importBtn), exams),
-      h("section", { class: "admin-block" },
-        h("h3", {}, "Formula sheets"),
+        h("div", {}, importBtn), examSearch, exams),
+      section("sheets", "Formula sheets", sheetCount,
         h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Import a formula sheet file (made from a PDF). People can read it on the Formulas page but cannot download it. Importing a file with the same id replaces that sheet."),
-        h("div", {}, sheetImportBtn), sheetStatus, sheetRows)));
+        h("div", {}, sheetImportBtn), sheetStatus, sheetSearch, sheetRows)));
   setWatermark(null);
   loadPeople().catch(() => people.replaceChildren(h("div", { class: "err-box" }, "Couldn't load the list. Are the Firestore rules published?")));
   loadExams().catch(() => exams.replaceChildren(h("div", { class: "err-box" }, "Couldn't load exams.")));
@@ -1591,7 +1684,7 @@ function go(i) {
 }
 document.addEventListener("keydown", e => {
   if ((e.key === "Delete" || e.key === "Backspace") && !inEditable(e.target)) { const p = S.pads.find(x => x.sel); if (p) { e.preventDefault(); p.deleteSel(); return; } }
-  if (fLayer || !S.exam || !document.querySelector(".pager") || inEditable(e.target) || e.target.tagName === "SELECT") return;
+  if ((fLayer && !fLayer._docked) || !S.exam || !document.querySelector(".pager") || inEditable(e.target) || e.target.tagName === "SELECT") return;
   if (e.key === "ArrowRight") go(S.pageIndex + 1);
   if (e.key === "ArrowLeft") go(S.pageIndex - 1);
 });
