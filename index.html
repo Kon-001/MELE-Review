@@ -70,7 +70,8 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .btn.danger { color: var(--bad); }
 .btn.armed { background: var(--bad); border-color: var(--bad); color: #fff; }
-.btn:disabled { opacity: .45; cursor: default; }
+.btn:disabled, .btn.disabled { opacity: .45; cursor: default; }
+.btn.disabled { pointer-events: none; }
 .btn.small { min-height: 34px; padding: 5px 10px; font-size: 14px; }
 .muted { color: var(--muted); }
 .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
@@ -303,6 +304,34 @@ mark { background: #ffe9a8; color: inherit; border-radius: 2px; padding: 0 1px; 
 .admin-exam-top { display: flex; gap: 10px; align-items: flex-start; }
 .admin-exam-top .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .admin-exam-top small { display: block; color: var(--muted); }
+/* formula sheets */
+.fx-open { overflow: hidden; }
+.fx-open #watermark { z-index: 95; }
+.fx-layer { position: fixed; inset: 0; z-index: 90; background: var(--desk); display: flex; flex-direction: column; }
+.fx-head { background: var(--paper); border-bottom: 1px solid var(--rule); padding: calc(8px + var(--safe-top)) 12px 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.fx-head b { font-size: 16px; margin-right: 2px; }
+.fx-choose { flex: 1 1 200px; min-width: 0; justify-content: space-between; text-align: left; }
+.fx-choose span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fx-zoom { display: inline-flex; align-items: center; gap: 4px; }
+.fx-zoom .tool { min-width: 38px; font-size: 18px; }
+.fx-zoom .mono { min-width: 46px; text-align: center; font-size: 13px; color: var(--muted); }
+.fx-scroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; padding: 12px; }
+.fx-pages { margin: 0 auto; min-width: 100%; max-width: none; display: grid; gap: 12px; align-content: start; }
+.fx-page { position: relative; background: #fff; border: 1px solid var(--rule); box-shadow: 0 1px 4px rgba(0,0,0,.12); aspect-ratio: 1 / 1.414; width: 100%; }
+.fx-page canvas { display: block; width: 100%; height: 100%; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
+.fx-msg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 14px; text-align: center; padding: 12px; }
+.fx-page.ready .fx-msg { display: none; }
+.fx-foot { background: var(--paper); border-top: 1px solid var(--rule); padding: 8px 12px calc(8px + var(--safe-bottom)); display: flex; gap: 8px; align-items: center; justify-content: center; }
+.fx-foot select { height: 40px; border-radius: 8px; border: 1px solid var(--rule); background: var(--paper); padding: 0 8px; font-size: 15px; color: var(--ink); max-width: 60%; }
+.fx-empty { margin: 40px auto; max-width: 420px; text-align: center; color: var(--muted); display: grid; gap: 10px; }
+.fx-chooser { position: absolute; inset: 0; z-index: 5; background: rgba(20,28,38,.45); display: flex; align-items: flex-start; justify-content: center; padding: calc(60px + var(--safe-top)) 14px 14px; }
+.fx-card { background: var(--paper); border-radius: 14px; width: 100%; max-width: 520px; max-height: 100%; overflow: auto; padding: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.3); }
+.fx-card h4 { margin: 10px 10px 4px; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.fx-item { width: 100%; text-align: left; padding: 12px 12px; border-radius: 10px; border: 1px solid transparent; background: transparent; display: flex; align-items: center; gap: 10px; font-size: 16px; }
+.fx-item:hover { background: var(--desk); }
+.fx-item[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.fx-item .grow { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.fx-item small { color: var(--muted); font-size: 13px; }
 .rename-row { display: flex; gap: 8px; }
 .rename-in { flex: 1; min-width: 0; height: 38px; border-radius: 8px; border: 1px solid var(--rule); background: var(--paper); padding: 0 10px; font-size: 16px; color: var(--ink); }
 .admin-exam-sel { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -434,6 +463,7 @@ const ICON = {
   select: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="13" height="13" rx="1.5" stroke-dasharray="3 3"/><path d="M12 12l9 3.5-4 1.5-1.5 4z"/></svg>',
   boxsel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1" stroke-dasharray="3 3"/></svg>',
   lasso: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 19c-2-1.2-4-3.6-4-7 0-4.4 4-8 9-8s9 3.6 9 8-4 7-9 7c-1.6 0-3-.3-4.2-.8" stroke-dasharray="3 3"/><path d="M7 19c-.6 1.4-.3 2.4.8 2.6"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
   logout: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>',
   people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.9"/><path d="M16 3.1a4 4 0 010 7.8"/></svg>',
   google: '<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>',
@@ -556,6 +586,7 @@ function previewBackend() {
     async start(onState) { onState({ user: { email: "preview", name: "Preview" }, allowed: true, owner: false }); },
     async listExams() { return [{ id: PREVIEW.id, title: PREVIEW.title, subtitle: PREVIEW.subtitle, subject: PREVIEW.subject, source: PREVIEW.source, sections: PREVIEW.sections, count: PREVIEW.questions.length }]; },
     async loadExam() { return PREVIEW; },
+    async listSheets() { return []; },
   };
 }
 
@@ -572,7 +603,7 @@ async function firebaseBackend() {
   const auth = au.getAuth(fbApp);
   // Keep a copy of the exams on this device so they open without internet.
   let db;
-  try { db = fs.initializeFirestore(fbApp, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager() }) }); }
+  try { db = fs.initializeFirestore(fbApp, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager(), cacheSizeBytes: fs.CACHE_SIZE_UNLIMITED }) }); }
   catch { db = fs.getFirestore(fbApp); }
   const provider = new au.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
@@ -650,6 +681,34 @@ async function firebaseBackend() {
       await b.commit();
     },
     updateExamMeta: (id, data) => fs.setDoc(fs.doc(db, "exams", id), data, { merge: true }),
+    // formula sheets: one small document per page image, so each stays under Firestore's 1 MiB limit
+    async listSheets() {
+      const snap = await fs.getDocs(fs.collection(db, "sheets"));
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    },
+    async loadSheetPage(id, n) {
+      const d = await fs.getDoc(fs.doc(db, "sheetPages", `${id}__${String(n).padStart(3, "0")}`));
+      if (!d.exists()) throw new Error("missing page");
+      return d.data();
+    },
+    async importSheet(x, progress) {
+      let oldCount = 0;
+      try { const o = await fs.getDocFromServer(fs.doc(db, "sheets", x.id)); if (o.exists()) oldCount = o.data().count || 0; } catch {}
+      for (let i = 0; i < x.pages.length; i++) {
+        const pg = x.pages[i];
+        await fs.setDoc(fs.doc(db, "sheetPages", `${x.id}__${String(i + 1).padStart(3, "0")}`), { n: i + 1, w: pg.w, h: pg.h, img: pg.img });
+        progress && progress(i + 1, x.pages.length);
+      }
+      const meta = { title: x.title, count: x.pages.length, aspect: +(x.pages[0].h / x.pages[0].w).toFixed(4), updatedAt: fs.serverTimestamp() };
+      if (SUBJECTS.some(s => s.id === x.subject)) meta.subject = x.subject;
+      await fs.setDoc(fs.doc(db, "sheets", x.id), meta, { merge: true });
+      for (let i = x.pages.length + 1; i <= oldCount; i++) await fs.deleteDoc(fs.doc(db, "sheetPages", `${x.id}__${String(i).padStart(3, "0")}`));
+    },
+    updateSheetMeta: (id, data) => fs.setDoc(fs.doc(db, "sheets", id), data, { merge: true }),
+    async deleteSheet(id, count) {
+      await fs.deleteDoc(fs.doc(db, "sheets", id));
+      for (let i = 1; i <= (count || 0); i++) await fs.deleteDoc(fs.doc(db, "sheetPages", `${id}__${String(i).padStart(3, "0")}`));
+    },
     async deleteExam(id) {
       const b = fs.writeBatch(db);
       b.delete(fs.doc(db, "exams", id)); b.delete(fs.doc(db, "examContent", id));
@@ -798,6 +857,7 @@ function setPref(k, v) { try { localStorage.setItem(k, v); } catch {} }
 async function homeScreen() {
   setWatermark(S.backend.mode === "preview" ? "PREVIEW" : S.user.email);
   const right = [];
+  if (S.backend.mode !== "preview") right.push(formulasButton());
   if (S.owner) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Manage access and exams", title: "Manage", html: ICON.people, onclick: adminScreen }));
   if (S.backend.signOut) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Sign out", title: "Sign out", html: ICON.logout, onclick: () => S.backend.signOut() }));
   const banner = S.backend.mode === "preview"
@@ -1062,6 +1122,157 @@ async function clearScreen(exams, prog, scope) {
 }
 
 /* ---------- admin (owner only) ---------- */
+/* ---------- formula sheets (viewer overlay, so a problem set underneath stays exactly as it was) ---------- */
+let fLayer = null;
+function closeFormulas() {
+  if (!fLayer) return;
+  fLayer._stop && fLayer._stop();
+  fLayer.remove(); fLayer = null;
+  document.documentElement.classList.remove("fx-open");
+}
+function formulasButton() {
+  return h("button", { class: "btn small fx-open-btn", type: "button", "aria-label": "Open formula sheets", title: "Formula sheets", onclick: openFormulas,
+    html: `<span style="display:inline-flex;width:16px;height:16px">${ICON.book}</span><span>Formulas</span>` });
+}
+async function openFormulas() {
+  if (fLayer) return;
+  const layer = h("div", { class: "fx-layer", role: "dialog", "aria-label": "Formula sheets" });
+  fLayer = layer;
+  document.documentElement.classList.add("fx-open");
+  let alive = true, runId = 0, sheets = [], current = null, zoom = 1;
+  try { zoom = Math.min(3, Math.max(1, +localStorage.getItem("mele-fx-zoom") || 1)); } catch {}
+  layer._stop = () => { alive = false; runId++; io && io.disconnect(); };
+
+  const closeBtn = h("button", { class: "icon-btn", type: "button", "aria-label": "Close formulas", html: ICON.back, onclick: closeFormulas });
+  const chooseLbl = h("span", {}, "Choose a formula sheet");
+  const chooseBtn = h("button", { class: "btn fx-choose", type: "button", "aria-haspopup": "dialog" }, chooseLbl, h("span", { "aria-hidden": "true" }, "▾"));
+  const pct = h("span", { class: "mono" }, "");
+  const zOut = h("button", { class: "tool", type: "button", "aria-label": "Zoom out" }, "−");
+  const zIn = h("button", { class: "tool", type: "button", "aria-label": "Zoom in" }, "+");
+  const head = h("div", { class: "fx-head" }, closeBtn, h("b", {}, "Formulas"), chooseBtn, h("span", { class: "fx-zoom" }, zOut, pct, zIn));
+  const pages = h("div", { class: "fx-pages" });
+  const scroll = h("div", { class: "fx-scroll" }, pages);
+  const jump = h("select", { "aria-label": "Go to page" });
+  const prev = h("button", { class: "btn small", type: "button" }, "Prev");
+  const next = h("button", { class: "btn small", type: "button" }, "Next");
+  const foot = h("div", { class: "fx-foot hidden" }, prev, jump, next);
+  layer.append(head, scroll, foot);
+  document.body.append(layer);
+
+  let wrappers = [];
+  const io = "IntersectionObserver" in window ? new IntersectionObserver(es => es.forEach(e => e.isIntersecting ? e.target._load() : e.target._free()), { root: scroll, rootMargin: "1600px 0px" }) : null;
+
+  function makePage(sheet, n) {
+    const canvas = h("canvas", { "aria-label": `${sheet.title}, page ${n}`, role: "img" });
+    const msg = h("div", { class: "fx-msg" }, `Page ${n}`);
+    const w = h("div", { class: "fx-page", "data-n": String(n) }, canvas, msg);
+    if (sheet.aspect) w.style.aspectRatio = `1 / ${sheet.aspect}`;
+    let state = null;
+    w._load = () => {
+      if (state) return;
+      state = "loading"; w.classList.remove("failed"); msg.textContent = "Loading…";
+      S.backend.loadSheetPage(sheet.id, n).then(d => {
+        if (state !== "loading" || !alive) return;
+        const img = new Image();
+        img.onload = () => {
+          if (state !== "loading" || !alive) return;
+          canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+          canvas.getContext("2d").drawImage(img, 0, 0);
+          w.style.aspectRatio = `${d.w} / ${d.h}`;
+          state = "ready"; w.classList.add("ready");
+        };
+        img.onerror = () => { state = null; msg.textContent = "Couldn't draw this page. Tap to retry."; };
+        img.src = d.img;
+      }).catch(() => { state = null; msg.textContent = "Couldn't load this page. Check your connection, then tap here."; });
+    };
+    w._free = () => { if (!state) return; state = null; canvas.width = 1; canvas.height = 1; w.classList.remove("ready"); msg.textContent = `Page ${n}`; };
+    w.addEventListener("click", () => { if (!state) w._load(); });
+    return w;
+  }
+
+  function applyZoom(keepPos) {
+    const ratio = keepPos && scroll.scrollHeight ? scroll.scrollTop / scroll.scrollHeight : null;
+    pages.style.width = `${zoom * 100}%`;
+    pct.textContent = `${Math.round(zoom * 100)}%`;
+    zOut.disabled = zoom <= 1; zIn.disabled = zoom >= 3;
+    if (ratio !== null) scroll.scrollTop = ratio * scroll.scrollHeight;
+    try { localStorage.setItem("mele-fx-zoom", String(zoom)); } catch {}
+  }
+  zOut.addEventListener("click", () => { zoom = Math.max(1, +(zoom - 0.25).toFixed(2)); applyZoom(true); });
+  zIn.addEventListener("click", () => { zoom = Math.min(3, +(zoom + 0.25).toFixed(2)); applyZoom(true); });
+
+  const pageNow = () => {
+    const top = scroll.getBoundingClientRect().top + scroll.clientHeight * 0.3;
+    let at = 0;
+    wrappers.forEach((w, i) => { if (w.getBoundingClientRect().top <= top) at = i; });
+    return at;
+  };
+  const goPage = i => { const w = wrappers[Math.max(0, Math.min(wrappers.length - 1, i))]; if (w) scroll.scrollTo({ top: w.offsetTop - 12, behavior: "smooth" }); };
+  let ticking = false;
+  scroll.addEventListener("scroll", () => {
+    if (ticking) return; ticking = true;
+    requestAnimationFrame(() => { ticking = false; if (alive && wrappers.length) jump.value = String(pageNow()); });
+  }, { passive: true });
+  jump.addEventListener("change", () => goPage(+jump.value));
+  prev.addEventListener("click", () => goPage(pageNow() - 1));
+  next.addEventListener("click", () => goPage(pageNow() + 1));
+
+  function showSheet(sheet) {
+    current = sheet; runId++;
+    try { localStorage.setItem("mele-sheet", sheet.id); } catch {}
+    chooseLbl.textContent = sheet.title;
+    wrappers.forEach(w => io && io.unobserve(w));
+    wrappers = Array.from({ length: sheet.count }, (_, i) => makePage(sheet, i + 1));
+    pages.replaceChildren(...wrappers);
+    wrappers.forEach(w => io ? io.observe(w) : w._load());
+    jump.replaceChildren(...wrappers.map((_, i) => h("option", { value: String(i) }, `Page ${i + 1} of ${sheet.count}`)));
+    foot.classList.toggle("hidden", sheet.count < 2);
+    scroll.scrollTop = 0; applyZoom(false);
+    // keep every page on this device so the sheet also opens with no internet
+    const mine = runId;
+    (async () => {
+      for (let n = 1; n <= sheet.count && alive && runId === mine; n++) {
+        try { await S.backend.loadSheetPage(sheet.id, n); } catch {}
+        await new Promise(r => setTimeout(r, 120));
+      }
+    })();
+  }
+
+  function chooser() {
+    const close = () => ov.remove();
+    const groups = [...SUBJECTS.map(sj => ({ id: sj.id, name: sj.id })), { id: "", name: "Other" }];
+    const body = [];
+    for (const g of groups) {
+      const list = sheets.filter(x => (SUBJECTS.some(sj => sj.id === x.subject) ? x.subject : "") === g.id);
+      if (!list.length) continue;
+      body.push(h("h4", {}, g.name));
+      for (const x of list) body.push(h("button", { class: "fx-item", type: "button", "aria-current": String(current && current.id === x.id), onclick: () => { close(); showSheet(x); } },
+        h("span", { class: "grow" }, x.title), h("small", {}, `${x.count} ${x.count === 1 ? "page" : "pages"}`)));
+    }
+    const ov = h("div", { class: "fx-chooser", role: "dialog", "aria-label": "Choose a formula sheet", onclick: e => { if (e.target === ov) close(); } },
+      h("div", { class: "fx-card" }, ...(body.length ? body : [h("div", { class: "empty" }, "No formula sheets yet.")]),
+        h("div", { style: "padding:8px" }, h("button", { class: "btn", type: "button", style: "width:100%", onclick: close }, "Cancel"))));
+    layer.append(ov);
+    ov.querySelector(".fx-item[aria-current=true], .fx-item")?.focus();
+  }
+  chooseBtn.addEventListener("click", () => { if (sheets.length) chooser(); });
+  layer.addEventListener("keydown", e => { if (e.key === "Escape") { const ov = layer.querySelector(".fx-chooser"); ov ? ov.remove() : closeFormulas(); } });
+
+  pages.replaceChildren(h("div", { class: "fx-empty" }, "Loading…"));
+  try { sheets = await S.backend.listSheets(); } catch { sheets = null; }
+  if (!alive) return;
+  if (sheets === null) { sheets = []; pages.replaceChildren(h("div", { class: "fx-empty err-box" }, "Couldn't load the formula sheets. Check your connection.")); return; }
+  sheets.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+  if (!sheets.length) {
+    pages.replaceChildren(h("div", { class: "fx-empty" }, h("b", {}, "No formula sheets yet"), h("span", {}, S.owner ? "Open Manage, then import a formula sheet file." : "They will show up here once they are added.")));
+    return;
+  }
+  let last = null; try { last = localStorage.getItem("mele-sheet"); } catch {}
+  const first = sheets.find(x => x.id === last);
+  if (first) showSheet(first);
+  else { pages.replaceChildren(h("div", { class: "fx-empty" }, h("b", {}, "Pick a formula sheet"), h("span", {}, "Tap the button above to choose one."))); chooser(); }
+}
+
 async function adminScreen() {
   const emailBox = h("textarea", { id: "new-emails", placeholder: "name@gmail.com, another@gmail.com", autocomplete: "off", autocapitalize: "off", spellcheck: "false" });
   const addBtn = h("button", { class: "btn primary", type: "button" }, "Add emails");
@@ -1070,6 +1281,10 @@ async function adminScreen() {
   const fileInput = h("input", { type: "file", id: "exam-file", accept: ".json,application/json" });
   const importBtn = h("label", { class: "btn file-btn", for: "exam-file" }, "Import exam file (.json)", fileInput);
   const count = h("span", { class: "muted" });
+  const sheetFile = h("input", { type: "file", id: "sheet-file", accept: ".json,application/json" });
+  const sheetImportBtn = h("label", { class: "btn file-btn", for: "sheet-file" }, "Import formula sheet (.json)", sheetFile);
+  const sheetStatus = h("div", { class: "muted", style: "font-size:14px", "aria-live": "polite" });
+  const sheetRows = h("div", { class: "rows" }, h("div", { class: "empty" }, "Loading…"));
 
   async function loadPeople() {
     const list = await S.backend.listAllowed();
@@ -1117,6 +1332,59 @@ async function adminScreen() {
         h("div", { class: "admin-exam-sel" }, h("label", { for: subjSel.id }, "Subject", subjSel), h("label", { for: srcSel.id }, "Source", srcSel)));
     }) : [h("div", { class: "empty" }, "No exams yet. Import the .json file I gave you.")]));
   }
+  async function loadSheets() {
+    const list = await S.backend.listSheets();
+    list.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+    sheetRows.replaceChildren(...(list.length ? list.map(x => {
+      const del = h("button", { class: "btn small danger", type: "button" }, "Delete");
+      armed(del, "Delete", async () => { try { await S.backend.deleteSheet(x.id, x.count); toast(`Deleted ${x.title}`); } catch { toast("Couldn't delete. Check your connection."); } loadSheets(); });
+      const subjSel = h("select", { id: `ssubj-${x.id}`, "aria-label": `Subject of ${x.title}` },
+        h("option", { value: "", selected: !SUBJECTS.some(sj => sj.id === x.subject) }, "Choose…"),
+        ...SUBJECTS.map(sj => h("option", { value: sj.id, selected: x.subject === sj.id }, sj.id)));
+      subjSel.addEventListener("change", async () => {
+        try { await S.backend.updateSheetMeta(x.id, { subject: subjSel.value }); toast(`Saved: ${x.title} → ${subjSel.value || "Other"}`); }
+        catch { toast("Couldn't save. Check your connection."); }
+      });
+      const nameIn = h("input", { type: "text", id: `sname-${x.id}`, class: "rename-in", value: x.title, maxlength: "120", autocomplete: "off", "aria-label": `New name for ${x.title}` });
+      const renBtn = h("button", { class: "btn small", type: "button" }, "Rename");
+      const doRename = async () => {
+        const t = nameIn.value.trim().replace(/\s+/g, " ");
+        if (!t) { toast("Type a name first."); nameIn.value = x.title; return; }
+        if (t === x.title) { toast("That's already the name."); return; }
+        renBtn.disabled = true;
+        try { await S.backend.updateSheetMeta(x.id, { title: t }); toast(`Renamed to ${t}`); loadSheets(); }
+        catch { toast("Couldn't save. Check your connection."); renBtn.disabled = false; }
+      };
+      renBtn.addEventListener("click", doRename);
+      nameIn.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); doRename(); } });
+      return h("div", { class: "admin-exam" },
+        h("div", { class: "admin-exam-top" }, h("span", { class: "grow" }, x.title, h("small", { class: "mono" }, `${x.count} pages · id ${x.id}`)), del),
+        h("div", { class: "rename-row" }, nameIn, renBtn),
+        h("div", { class: "admin-exam-sel" }, h("label", { for: subjSel.id }, "Subject", subjSel)));
+    }) : [h("div", { class: "empty" }, "No formula sheets yet.")]));
+  }
+  sheetFile.addEventListener("change", async () => {
+    const f = sheetFile.files[0]; sheetFile.value = "";
+    if (!f) return;
+    let x;
+    try {
+      x = JSON.parse(await f.text());
+      if (x.format !== "formula-sheet/1" || !x.id || !x.title || !Array.isArray(x.pages) || !x.pages.length) throw new Error("bad");
+      if (!/^[a-z0-9][a-z0-9-]{0,80}$/.test(x.id)) throw new Error("bad");
+      if (x.pages.some(pg => !pg || !/^data:image\/jpeg;base64,/.test(pg.img || "") || !pg.w || !pg.h)) throw new Error("bad");
+      if (x.pages.some(pg => pg.img.length > 950000)) throw new Error("big");
+    } catch (e) { toast(e.message === "big" ? "A page in that file is too big for one document." : "That isn't a formula sheet file from this app."); return; }
+    sheetImportBtn.classList.add("disabled"); sheetFile.disabled = true;
+    try {
+      await S.backend.importSheet(x, (i, n) => { sheetStatus.textContent = `Uploading page ${i} of ${n}…`; });
+      sheetStatus.textContent = "";
+      toast(`Imported ${x.title} (${x.pages.length} pages)`);
+      loadSheets();
+    } catch (e) {
+      sheetStatus.textContent = "";
+      toast("Import failed. Check the connection and that the Firestore rules are published (see SETUP).");
+    } finally { sheetImportBtn.classList.remove("disabled"); sheetFile.disabled = false; }
+  });
   addBtn.addEventListener("click", async () => {
     const raw = emailBox.value.split(/[\s,;]+/).map(s => s.trim().toLowerCase()).filter(Boolean);
     const good = raw.filter(e => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e));
@@ -1150,10 +1418,15 @@ async function adminScreen() {
       h("section", { class: "admin-block" },
         h("h3", {}, "Exams"),
         h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Importing a file with the same id replaces that exam. People's own drawings stay on their devices. Choose each exam's subject and source here; it saves as soon as you change it."),
-        h("div", {}, importBtn), exams)));
+        h("div", {}, importBtn), exams),
+      h("section", { class: "admin-block" },
+        h("h3", {}, "Formula sheets"),
+        h("p", { class: "muted", style: "margin:0;font-size:14px" }, "Import a formula sheet file (made from a PDF). People can read it on the Formulas page but cannot download it. Importing a file with the same id replaces that sheet."),
+        h("div", {}, sheetImportBtn), sheetStatus, sheetRows)));
   setWatermark(null);
   loadPeople().catch(() => people.replaceChildren(h("div", { class: "err-box" }, "Couldn't load the list. Are the Firestore rules published?")));
   loadExams().catch(() => exams.replaceChildren(h("div", { class: "err-box" }, "Couldn't load exams.")));
+  loadSheets().catch(() => sheetRows.replaceChildren(h("div", { class: "err-box" }, "Couldn't load formula sheets. Are the Firestore rules updated?")));
 }
 
 /* ---------- exam view ---------- */
@@ -1225,7 +1498,7 @@ function renderExam() {
   setWatermark(S.backend.mode === "preview" ? "PREVIEW" : S.user.email);
   store.set(metaKey(ex.id), { page: S.pageIndex });
 
-  const header = topbar({ title: ex.title, sub: pageLabel(page, S.pageIndex), onBack: homeScreen });
+  const header = topbar({ title: ex.title, sub: pageLabel(page, S.pageIndex), onBack: homeScreen, right: S.backend.mode !== "preview" ? [formulasButton()] : [] });
   header.append(toolButtons());
 
   const firstPageOf = name => S.pages.findIndex(p => p.section === name);
@@ -1318,7 +1591,7 @@ function go(i) {
 }
 document.addEventListener("keydown", e => {
   if ((e.key === "Delete" || e.key === "Backspace") && !inEditable(e.target)) { const p = S.pads.find(x => x.sel); if (p) { e.preventDefault(); p.deleteSel(); return; } }
-  if (!S.exam || !document.querySelector(".pager") || inEditable(e.target) || e.target.tagName === "SELECT") return;
+  if (fLayer || !S.exam || !document.querySelector(".pager") || inEditable(e.target) || e.target.tagName === "SELECT") return;
   if (e.key === "ArrowRight") go(S.pageIndex + 1);
   if (e.key === "ArrowLeft") go(S.pageIndex - 1);
 });
@@ -1936,7 +2209,7 @@ async function main() {
   }
   let lastEmail = null;
   await S.backend.start(state => {
-    if (!state.user) { S.user = null; S.owner = false; lastEmail = null; signInScreen(); return; }
+    if (!state.user) { closeFormulas(); S.user = null; S.owner = false; lastEmail = null; signInScreen(); return; }
     S.user = state.user;
     if (state.checking) { messageScreen("Checking access…", h("p", { class: "muted" }, `Signed in as ${state.user.email}`)); return; }
     S.owner = !!state.owner;
