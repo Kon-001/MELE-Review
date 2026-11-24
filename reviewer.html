@@ -1875,6 +1875,8 @@ refEl.addEventListener("submit", e=>{
 #p-pop{position:absolute;right:0;bottom:48px;background:var(--sheet);border:1.5px solid var(--ink);border-radius:10px;padding:8px;display:flex;flex-direction:column;gap:6px;min-width:210px}
 #p-pop[hidden]{display:none}
 #p-pop button{text-align:left;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--paper)}
+.m-sj,.m-sc{border:1px solid var(--line,#2a3342);border-radius:12px;margin:8px 0;padding:4px 12px}.m-sc{margin-left:10px}
+.m-sj>summary,.m-sc>summary{cursor:pointer;padding:10px 0;font-size:17px;list-style:none}.m-sj>summary::before,.m-sc>summary::before{content:"▸ "}.m-sj[open]>summary::before,.m-sc[open]>summary::before{content:"▾ "}
 .p-mail{font-size:12.5px;color:var(--ink-3);overflow-wrap:anywhere;padding:2px 4px}
 @media print{body{visibility:hidden}}
 </style>
@@ -2114,7 +2116,15 @@ async function manageSources(a) {
   const paths = new Map();
   for (const d of docs) if (/^(banks|variants|figures)\//.test(d.path)) paths.set(d.path, (paths.get(d.path) || 0) + 1);
   const banks = [...paths.keys()].filter(p => p.startsWith("banks/")).sort();
-  const rows = banks.map(p => { const n = p.slice(6); return `<div class="m-row"><div><b>${esc(n.replace(/\.js$/, ""))}</b><div class="p-mail">${paths.has("variants/" + n) ? "has variation file" : "no variation file"}</div></div><button class="g-btn ghost m-rm" data-p="${esc(n)}">Remove</button></div>`; }).join("");
+  const dataOf = n => String((docs.find(d => d.path === "banks/" + n) || {}).data || "");
+  const subjOfFile = n => { const m = dataOf(n).match(/subject\s*:\s*["'](\w+)["']/); const v = (m ? m[1] : "").toLowerCase(), k = n.toLowerCase();
+    if (/^md/.test(v) || v === "mdsp") return "MD"; if (v === "pipe") return "PIPE"; if (v === "math") return "MATH";
+    if (/pipe|pump|fluid|hydraul/.test(k)) return "PIPE"; if (/math|algebra|trig|calcul|geometr|statics|dynamics/.test(k)) return "MATH"; return "MD"; };
+  const srcOfFile = n => { const k = n.toLowerCase(); return /prime/.test(k) ? "Prime" : /alcorcon/.test(k) ? "Alcorcon" : /estoque/.test(k) ? "Estoque" : "Others"; };
+  const rowOf = p => { const n = p.slice(6); return `<div class="m-row"><div><b>${esc(n.replace(/\.js$/, ""))}</b><div class="p-mail">${paths.has("variants/" + n) ? "has variation file" : "no variation file"}</div></div><button class="g-btn ghost m-rm" data-p="${esc(n)}">Remove</button></div>`; };
+  const tree = {}; banks.forEach(p => { const n = p.slice(6), sj = subjOfFile(n), sc = srcOfFile(n); ((tree[sj] = tree[sj] || {})[sc] = tree[sj][sc] || []).push(p); });
+  const rows = ["MD", "PIPE", "MATH"].map(sj => { const t = tree[sj] || {}, cnt = Object.values(t).reduce((x, l) => x + l.length, 0);
+    return `<details class="m-sj"${cnt ? "" : " "}><summary><b>${sj}</b> <span class="p-mail">${cnt}</span></summary>` + (cnt ? ["Prime", "Alcorcon", "Estoque", "Others"].filter(sc => t[sc]).map(sc => `<details class="m-sc"><summary>${sc} <span class="p-mail">${t[sc].length}</span></summary>${t[sc].map(rowOf).join("")}</details>`).join("") : `<p class="muted">None yet.</p>`) + `</details>`; }).join("");
   screen(`<h1>Sources</h1><p>Add the question file for a source, and its variation file with the same name if you have one. Pictures used by questions can be added too. You can pick several files at once.</p>
     <input id="m-f" type="file" multiple><button id="m-go" class="g-btn">Add files</button>
     <h2 style="font-size:20px;margin-top:6px">Loaded sources (${banks.length})</h2>${rows || `<p class="muted">None yet.</p>`}
