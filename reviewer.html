@@ -2040,12 +2040,12 @@ function showPill(a) {
   pill.innerHTML = `<button id="p-menu" aria-label="Account">⋯</button><div id="p-pop" hidden><div class="p-mail">${esc(email)}</div><button id="p-ps">Back to Problem Sets</button><button id="p-off">Save tables for offline</button>${a.owner ? `<button id="p-src">Manage sources</button><button id="p-imp">Import / update content</button>` : ""}<button id="p-out">Sign out</button><div id="p-msg" class="p-mail"></div></div>`;
   $("p-ps").onclick = () => { location.href = "./"; };
   $("p-menu").onclick = () => { $("p-pop").hidden = !$("p-pop").hidden; };
-  $("p-out").onclick = () => { try { au.signOut(auth).then(() => location.reload()); } catch {} };
-  if (a.owner) { $("p-imp").onclick = () => ownerImport(a, false); $("p-src").onclick = () => manageSources(a); }
   $("p-off").onclick = async () => {
     const m = $("p-msg"); m.textContent = "Saving…";
     try { const r = await fetchGroup("img"); m.textContent = r.length ? `Saved ${r.length} table pages on this device.` : "No table pages were uploaded."; } catch (e) { m.textContent = "Couldn't save (" + (e.code || e.message) + ")."; }
   };
+  $("p-out").onclick = () => { try { au.signOut(auth).then(() => location.reload()); } catch {} };
+  if (a.owner) { $("p-imp").onclick = () => ownerImport(a, false); $("p-src").onclick = () => manageSources(a); }
 }
 
 /* ---- owner: import bundles ---- */

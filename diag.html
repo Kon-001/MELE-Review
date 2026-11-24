@@ -1,0 +1,46 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MELE check</title>
+<style>body{font:15px/1.5 -apple-system,system-ui,sans-serif;background:#0d111a;color:#e6e9f2;padding:16px;max-width:760px;margin:auto}h1{font-size:20px}pre{white-space:pre-wrap;background:#161c2a;padding:12px;border:1px solid #2b3550}button{font:600 15px system-ui;padding:12px 14px;margin:6px 6px 6px 0}</style></head><body>
+<h1>MELE connection check</h1><p>Wait about 40 seconds, then screenshot this page and send it.</p>
+<pre id="o">Starting…</pre>
+<button id="b1">Reset saved data on this device</button><button id="b2">Sign out</button>
+<script src="config.js"></script>
+<script type="module">
+const o=document.getElementById("o"); const t0=performance.now();
+const L=s=>{o.textContent+="\n["+((performance.now()-t0)/1000).toFixed(1)+"s] "+s;};
+o.textContent="";
+const TO=(p,ms)=>Promise.race([p,new Promise((_,r)=>setTimeout(()=>r({code:"TIMEOUT after "+ms/1000+"s"}),ms))]);
+L("online: "+navigator.onLine+" · "+(navigator.userAgent.match(/(iPad|iPhone|Version\/[\d.]+)/g)||[]).join(" "));
+try{ const r=await navigator.serviceWorker.getRegistrations(); L("service workers: "+r.length+(r.length?" ("+r.map(x=>x.scope).join(", ")+")":"")); }catch(e){L("service workers: n/a");}
+try{ const k=await caches.keys(); L("cache storage: "+(k.join(", ")||"none")); }catch(e){}
+try{ const d=await indexedDB.databases(); L("saved databases: "+(d.map(x=>x.name).join(", ")||"none")); }catch(e){L("saved databases: can't list");}
+try{ L("remembered sign-ins: "+(Object.keys(localStorage).filter(k=>k.startsWith("mele-ok:")).join(", ")||"none")); }catch(e){}
+const V="12.11.0", base="https://www.gstatic.com/firebasejs/"+V+"/";
+let fa,au,fs;
+try{ [fa,au,fs]=await TO(Promise.all([import(base+"firebase-app.js"),import(base+"firebase-auth.js"),import(base+"firebase-firestore.js")]),15000); L("firebase library: loaded"); }catch(e){ L("firebase library: FAILED "+(e.code||e.message)); }
+if(fs){
+  const app=fa.initializeApp(window.FIREBASE_CONFIG); const auth=au.getAuth(app);
+  document.getElementById("b2").onclick=()=>au.signOut(auth).then(()=>location.reload());
+  const user=await TO(new Promise(res=>au.onAuthStateChanged(auth,u=>res(u))),10000).catch(e=>({email:"(auth: "+e.code+")"}));
+  L("signed in as: "+(user?user.email:"nobody — sign in on the main site first"));
+  if(user&&user.email&&!String(user.email).startsWith("(")){
+    const db1=fs.initializeFirestore(app,{localCache:fs.memoryLocalCache()});
+    let t=performance.now();
+    try{ const s=await TO(fs.getDocsFromServer(fs.query(fs.collection(db1,"allowed"),fs.limit(1))),12000); L("TEST A (no saved data) access list: OK in "+((performance.now()-t)/1000).toFixed(1)+"s"); }catch(e){ L("TEST A (no saved data) access list: "+(e.code||e.message)+" after "+((performance.now()-t)/1000).toFixed(1)+"s"); }
+    t=performance.now();
+    try{ const s=await TO(fs.getDocsFromServer(fs.query(fs.collection(db1,"appFiles"),fs.where("grp","==","text"))),25000); L("TEST B (no saved data) questions: "+s.size+" pieces in "+((performance.now()-t)/1000).toFixed(1)+"s"); }catch(e){ L("TEST B (no saved data) questions: "+(e.code||e.message)); }
+    const app2=fa.initializeApp(window.FIREBASE_CONFIG,"second"); const au2=au.getAuth(app2);
+    await new Promise(r=>setTimeout(r,1500));
+    try{ const db2=fs.initializeFirestore(app2,{localCache:fs.persistentLocalCache({tabManager:fs.persistentMultipleTabManager()})});
+      t=performance.now();
+      try{ await TO(fs.getDocsFromServer(fs.query(fs.collection(db2,"allowed"),fs.limit(1))),12000); L("TEST C (with saved data, like the app) access list: OK in "+((performance.now()-t)/1000).toFixed(1)+"s"); }catch(e){ L("TEST C (with saved data, like the app) access list: "+(e.code||e.message)+" after "+((performance.now()-t)/1000).toFixed(1)+"s"); }
+    }catch(e){ L("TEST C could not start: "+(e.code||e.message)); }
+  }
+  L("done");
+}
+document.getElementById("b1").onclick=async()=>{
+  try{ (await navigator.serviceWorker.getRegistrations()).forEach(r=>r.unregister()); }catch(e){}
+  try{ (await caches.keys()).forEach(k=>caches.delete(k)); }catch(e){}
+  try{ for(const d of (await indexedDB.databases())) indexedDB.deleteDatabase(d.name); }catch(e){}
+  try{ Object.keys(localStorage).filter(k=>k.startsWith("mele")).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+  L("Reset done. Reload this page, then open the Reviewer."); };
+</script></body></html>
