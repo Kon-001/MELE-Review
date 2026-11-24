@@ -2069,7 +2069,7 @@ async function manageSources(a) {
   const banks = [...paths.keys()].filter(p => p.startsWith("banks/")).sort();
   const rows = banks.map(p => { const n = p.slice(6); return `<div class="m-row"><div><b>${esc(n.replace(/\.js$/, ""))}</b><div class="p-mail">${paths.has("variants/" + n) ? "has variation file" : "no variation file"}</div></div><button class="g-btn ghost m-rm" data-p="${esc(n)}">Remove</button></div>`; }).join("");
   screen(`<h1>Sources</h1><p>Add the question file for a source, and its variation file with the same name if you have one. Pictures used by questions can be added too. You can pick several files at once.</p>
-    <input id="m-f" type="file" accept=".js,image/png,image/jpeg,image/webp" multiple><button id="m-go" class="g-btn">Add files</button>
+    <input id="m-f" type="file" multiple><button id="m-go" class="g-btn">Add files</button>
     <h2 style="font-size:20px;margin-top:6px">Loaded sources (${banks.length})</h2>${rows || `<p class="muted">None yet.</p>`}
     <button id="m-b" class="g-btn ghost">Back</button><pre id="imp-log"></pre>`);
   const log = t => { $("imp-log").textContent = t; };
