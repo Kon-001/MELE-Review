@@ -1,5 +1,5 @@
 // Keeps the app itself available without internet. It stores no questions and no one's work.
-const CACHE = "mele-app-v4";
+const CACHE = "mele-app-v5";
 const SHELL = ["./", "index.html", "reviewer.html", "config.js"];
 
 self.addEventListener("install", e => {

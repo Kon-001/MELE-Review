@@ -1919,6 +1919,7 @@ async function init() {
     email = (user.email || "").toLowerCase();
     screen(`<h1>MELE Reviewer</h1><p class="muted">Checking access…</p>`);
     const a = await access(email);
+    if (a.unknown) { screen(`<h1>MELE Reviewer</h1><p class="err">Couldn't reach the server to check your access. Check your connection.</p><button id="g-r" class="g-btn">Try again</button>`); $("g-r").onclick = () => location.reload(); return; }
     if (!a.allowed) return denied();
     afterAccess(a);
   });
@@ -1943,16 +1944,25 @@ const okKey = e => `mele-ok:${e}`;
 const readOk = e => { try { return localStorage.getItem(okKey(e)); } catch { return null; } };
 const writeOk = (e, v) => { try { v ? localStorage.setItem(okKey(e), v) : localStorage.removeItem(okKey(e)); } catch {} };
 const netErr = e => !e || !e.code || ["unavailable", "deadline-exceeded", "cancelled", "failed-precondition", "internal", "unknown"].includes(e.code) || navigator.onLine === false;
-async function access(em) {
+const withTO = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej({ code: "deadline-exceeded" }), ms))]);
+// Asks the server. Resolves {allowed, owner} or {unknown:true} when it can't be reached.
+async function serverCheck(em) {
   let den = false;
-  try { await fs.getDocsFromServer(fs.query(fs.collection(db, "allowed"), fs.limit(1))); writeOk(em, "owner"); return { allowed: true, owner: true }; }
+  try { await withTO(fs.getDocsFromServer(fs.query(fs.collection(db, "allowed"), fs.limit(1))), 12000); writeOk(em, "owner"); return { allowed: true, owner: true }; }
   catch (e) { if (!netErr(e)) den = true; }
   if (den) {
-    try { const s = await fs.getDocFromServer(fs.doc(db, "allowed", em)); writeOk(em, s.exists() ? "ok" : null); return { allowed: s.exists(), owner: false }; }
+    try { const s = await withTO(fs.getDocFromServer(fs.doc(db, "allowed", em)), 12000); writeOk(em, s.exists() ? "ok" : null); return { allowed: s.exists(), owner: false }; }
     catch (e) { if (!netErr(e)) { writeOk(em, null); return { allowed: false, owner: false }; } }
   }
+  return { unknown: true };
+}
+// Known users go straight in and are re-checked in the background; new sign-ins wait for the server.
+async function access(em) {
   const mem = readOk(em);
-  return { allowed: !!mem, owner: mem === "owner", offline: true };
+  if (mem) { const verify = serverCheck(em); verify.then(r => { if (r.allowed === false) location.reload(); }); return { allowed: true, owner: mem === "owner", offline: false }; }
+  const r = await serverCheck(em);
+  if (r.unknown) return { unknown: true };
+  return r;
 }
 
 /* ---- content ---- */
@@ -1962,10 +1972,30 @@ async function fetchGroup(grp) {
 }
 const b64url = (mime, b64) => { const bin = atob(b64), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return URL.createObjectURL(new Blob([u], { type: mime || "image/png" })); };
 
+const sigOf = docs => docs.map(d => d.id + ":" + String(d.data || "").length).sort().join("|");
+async function cachedGroup(grp) {
+  try { const snap = await fs.getDocsFromCache(fs.query(fs.collection(db, "appFiles"), fs.where("grp", "==", grp))); return snap.docs.map(d => ({ id: d.id, ...d.data() })); }
+  catch { return []; }
+}
+function updateBanner() {
+  if ($("g-upd")) return;
+  const b = document.createElement("div"); b.id = "g-upd";
+  b.style.cssText = "position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:99999;background:#1b2a3d;color:#fff;border:1px solid #6b8cff;padding:10px 14px;font:600 14px system-ui;display:flex;gap:12px;align-items:center";
+  b.innerHTML = 'New content is available <button style="font:inherit;padding:6px 10px">Reload</button>';
+  b.querySelector("button").onclick = () => location.reload(); document.body.appendChild(b);
+}
 async function afterAccess(a) {
   if (started) return;
+  const cached = await cachedGroup("text");
+  if (cached.length && cached.some(d => d.path === "config.js")) {
+    start(a, cached);
+    withTO(fs.getDocsFromServer(fs.query(fs.collection(db, "appFiles"), fs.where("grp", "==", "text"))), 30000)
+      .then(snap => { if (sigOf(snap.docs.map(d => ({ id: d.id, ...d.data() }))) !== sigOf(cached)) updateBanner(); }).catch(() => {});
+    return;
+  }
+  screen(`<h1>MELE Reviewer</h1><p class="muted">Loading questions…</p>`);
   let docs;
-  try { docs = await fetchGroup("text"); }
+  try { docs = await withTO(fetchGroup("text"), 30000); }
   catch (e) { screen(`<h1>MELE Reviewer</h1><p class="err">Couldn't load the questions (${esc(e.code || e.message)}). ${a.offline ? "You're offline and they haven't been saved on this device yet. Connect once to save them." : "Check your connection and reload."}</p><button id="g-r" class="g-btn">Try again</button>`); $("g-r").onclick = () => afterAccess(a); return; }
   if (!docs.length) {
     if (a.owner) return ownerImport(a, true);
