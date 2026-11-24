@@ -633,6 +633,10 @@ async function firebaseBackend() {
   let db;
   try { db = fs.initializeFirestore(fbApp, { localCache: fs.persistentLocalCache({ tabManager: fs.persistentMultipleTabManager(), cacheSizeBytes: fs.CACHE_SIZE_UNLIMITED }) }); }
   catch { db = fs.getFirestore(fbApp); }
+  // Let go of the saved data when leaving this page, so the other page (Reviewer) isn't left waiting on it.
+  window.__releaseDb = async () => { try { await fs.terminate(db); } catch {} };
+  window.addEventListener("pagehide", () => { try { fs.terminate(db); } catch {} });
+  window.addEventListener("pageshow", e => { if (e.persisted) location.reload(); });
   const provider = new au.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
   au.getRedirectResult(auth).catch(e => { pendingAuthError = e; showAuthError(e); });
@@ -896,7 +900,7 @@ async function homeScreen() {
   setWatermark(S.backend.mode === "preview" ? "PREVIEW" : S.user.email);
   const right = [];
   if (S.backend.mode !== "preview") right.push(formulasButton());
-  if (S.backend.mode !== "preview") right.push(h("button", { class: "btn small", type: "button", "aria-label": "Test yourself", title: "Test yourself (multiple-choice reviewer)", onclick: () => { location.href = "reviewer.html"; } }, "Test yourself"));
+  if (S.backend.mode !== "preview") right.push(h("button", { class: "btn small", type: "button", "aria-label": "Test yourself", title: "Test yourself (multiple-choice reviewer)", onclick: async () => { try { if (window.__releaseDb) await Promise.race([window.__releaseDb(), new Promise(r => setTimeout(r, 1500))]); } catch {} location.href = "reviewer.html"; } }, "Test yourself"));
   if (S.owner) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Manage access and exams", title: "Manage", html: ICON.people, onclick: adminScreen }));
   if (S.backend.signOut) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Sign out", title: "Sign out", html: ICON.logout, onclick: () => S.backend.signOut() }));
   const banner = S.backend.mode === "preview"
