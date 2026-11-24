@@ -279,7 +279,7 @@ sup, sub { font-size: .72em; line-height: 0; }
 .result-where { font-size: 13px; color: var(--muted); }
 .result-where b { color: var(--ink); font-family: var(--font-mono); }
 .result-text { font-size: 15px; line-height: 1.5; }
-mark { background: #ffe9a8; color: inherit; border-radius: 2px; padding: 0 1px; }
+mark { background: #ffe44d; color: inherit; border-radius: 2px; padding: 0 1px; }
 .exam-progress { max-width: 860px; margin: 10px auto 0; padding: 0 16px; }
 .problem.flash { box-shadow: 0 0 0 3px var(--accent); }
 @media (prefers-reduced-motion: no-preference) { .problem { transition: box-shadow .6s; } }
@@ -459,7 +459,7 @@ function h(tag, attrs = {}, ...kids) {
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
 // Exam text may carry <sup>/<sub> only; everything else is escaped.
-function rich(s) { return esc(s).replace(/&lt;(\/?)(sup|sub)&gt;/g, "<$1$2>"); }
+function rich(s) { return esc(s).replace(/&lt;(\/?)(sup|sub|mark)&gt;/g, "<$1$2>"); }
 function plain(s) { return String(s).replace(/<\/?(sup|sub)>/g, ""); }
 let toastTimer;
 window.addEventListener("offline", () => toast("You're offline. Your work keeps saving on this device."));
