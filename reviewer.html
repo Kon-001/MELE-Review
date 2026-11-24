@@ -821,7 +821,7 @@ function addItem(raw, defaults, idx, isDemo){
   const also = [...new Set((Array.isArray(it.also) ? it.also : it.also ? [it.also] : []).map(x=>String(x).trim()).filter(x=>x && x!==source))];
   // Progress follows the question itself, so an item shared by several tests keeps one record
   const id = (isDemo?"demo:":"") + (it.id!=null ? String(it.id) : hash([source, it.q.trim()].concat(choices).join("|")));
-  if(Q[id]) return bad("repeat of another item in the same source (same question and choices)");
+  if(Q[id]) return Q[id].ans===LET.indexOf(a) ? null : bad("same question and choices as another item in the same source, but a different answer");  // exact repeats are kept in the bank files but counted once
   Q[id] = {
     id, tests:[...new Set(tests)], test:tests[0], topic:it.topic, kind:it.kind, q:it.q.trim(), choices, ans:LET.indexOf(a),
     sol:String(it.solution!=null ? it.solution : (it.explain||"")).trim(),
