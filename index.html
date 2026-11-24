@@ -170,7 +170,6 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .qtext { font-size: 17px; line-height: 1.6; max-width: 70ch; }
 .qnote { font-size: 15px; font-style: italic; color: var(--muted); border-left: 3px solid var(--grid-major); padding-left: 10px; }
 sup, sub { font-size: .72em; line-height: 0; }
-mark { background: #ffe14d; color: inherit; padding: 0 .15em; border-radius: 2px; }
 .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .choices.long { grid-template-columns: 1fr; }
 .choice {
@@ -459,8 +458,8 @@ function h(tag, attrs = {}, ...kids) {
   return el;
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]); }
-// Exam text may carry <sup>/<sub>/<mark> only; everything else is escaped.
-function rich(s) { return esc(s).replace(/&lt;(\/?)(sup|sub|mark)&gt;/g, "<$1$2>"); }
+// Exam text may carry <sup>/<sub> only; everything else is escaped.
+function rich(s) { return esc(s).replace(/&lt;(\/?)(sup|sub)&gt;/g, "<$1$2>"); }
 function plain(s) { return String(s).replace(/<\/?(sup|sub)>/g, ""); }
 let toastTimer;
 window.addEventListener("offline", () => toast("You're offline. Your work keeps saving on this device."));
@@ -897,6 +896,7 @@ async function homeScreen() {
   setWatermark(S.backend.mode === "preview" ? "PREVIEW" : S.user.email);
   const right = [];
   if (S.backend.mode !== "preview") right.push(formulasButton());
+  if (S.backend.mode !== "preview") right.push(h("button", { class: "btn small", type: "button", "aria-label": "Test yourself", title: "Test yourself (multiple-choice reviewer)", onclick: () => { location.href = "reviewer.html"; } }, "Test yourself"));
   if (S.owner) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Manage access and exams", title: "Manage", html: ICON.people, onclick: adminScreen }));
   if (S.backend.signOut) right.push(h("button", { class: "icon-btn", type: "button", "aria-label": "Sign out", title: "Sign out", html: ICON.logout, onclick: () => S.backend.signOut() }));
   const banner = S.backend.mode === "preview"

@@ -1,6 +1,6 @@
 // Keeps the app itself available without internet. It stores no questions and no one's work.
-const CACHE = "mele-app-v1";
-const SHELL = ["./", "index.html", "config.js"];
+const CACHE = "mele-app-v2";
+const SHELL = ["./", "index.html", "reviewer.html", "config.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.allSettled(SHELL.map(u => c.add(new Request(u, { cache: "reload" })))))
