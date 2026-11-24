@@ -501,6 +501,9 @@ function makeR(rand,check,subs,vals){
     sub(oldT,newT){ subs.push([oldT,String(newT)]); },
     // first entry = the printed value; new values pick from the rest
     pick(list){ return check || list.length<2 ? list[0] : list[1+Math.floor(rand()*(list.length-1))]; },
+    // generated questions: a plain value in a range, or one entry of a list
+    v(lo,hi,step){ const k=Math.max(0,Math.round((hi-lo)/step)); const x=lo+step*Math.floor(rand()*(k+1)); const dd=Math.max(decOf(step),decOf(lo)); return +x.toFixed(Math.min(10,dd+2)); },
+    one(list){ return list[Math.floor(rand()*list.length)]; },
     rand
   };
   return R;
@@ -518,9 +521,10 @@ function make(gen,item,seed,check){
     if(!out) continue;
     if(!check && vals.length && vals.every(x=>x.v===x.orig)) continue;
     // question text
-    let q=String(item.q);
+    const GEN = out.q!=null;
+    let q=GEN ? String(out.q) : String(item.q);
     const marks=[];
-    subs.forEach(([o,n],k)=>{
+    if(!GEN) subs.forEach(([o,n],k)=>{
       const at=findAll(q,o);
       if(!at.length) throw new Error("snippet not found in question: \""+o+"\"");
       const tok="\u0001"+k+"\u0002";
@@ -531,7 +535,7 @@ function make(gen,item,seed,check){
     if(subs.length){ const anFix=(pre,a,num)=>{ const lead=num.split(/[,.]/)[0]; const an=num[0]==="8" || ((lead==="11"||lead==="18") && (num.indexOf(",")>0 || lead.length===num.split(".")[0].length)); return pre+a+(an?"n":"")+" "; };
       q=q.replace(/(^|[.!?:;]\s+|\n)(A)n? (?=(\d[\d,]*(?:\.\d+)?))/g,(m,pre,a,num)=>anFix(pre,a,num)).replace(/(^|[^\w])(a)n? (?=(\d[\d,]*(?:\.\d+)?))/g,(m,pre,a,num)=>anFix(pre,a,num)); }
     // answer + distractors
-    const t=template(item.choices[item.ans]);
+    const t = GEN ? {pre:"",post:out.unit?" "+out.unit:"",sig:out.sig||3,commas:true} : template(item.choices[item.ans]);
     const fmt = out.fmt || (out.int ? (v=>(t?t.pre:"")+String(Math.round(v))+(t?t.post:"")) : (v=>fmtChoice(v,t,out.sig)));
     const A=out.ans;
     if(!(isNum(A) || typeof A==="string" || (Array.isArray(A) && A.every(isNum)))){ lastErr=new Error("answer is not a number"); if(check) throw lastErr; continue; }
@@ -571,7 +575,181 @@ function make(gen,item,seed,check){
   throw lastErr || new Error("couldn't make a variation");
 }
 
-return {make, template, f, fs, sci, sig, psat, tsat, RETRY};
+/* ---------- Generated questions: whole new problems built from templates ---------- */
+const GPI = Math.PI, GG = 9.81, LBN = 4.4482;
+const gw = C => (4*C - 1)/(4*C - 4) + 0.615/C;
+const gb = C => (4*C + 2)/(4*C - 3);
+const WIRES = [[0.047,"No. 18 (0.047 in)"],[0.0625,"1/16 in"],[0.081,"No. 12 (0.081 in)"],[0.092,"No. 13 (0.092 in)"],[0.105,"No. 12 (0.105 in)"],[0.125,"1/8 in"],[0.162,"No. 8 (0.162 in)"],[0.1875,"3/16 in"],[0.25,"1/4 in"]];
+const GENS = [
+ // ---------------- springs ----------------
+ {key:"sp-defl", topic:"fasteners", name:"Spring deflection", make:R=>{
+   const d=R.v(4,14,0.5), od=R.v(40,130,1), N=R.v(10,30,1), Gg=R.v(78,95,1), P=R.v(30,200,5), C=(od-d)/d;
+   R.need(C>=5 && C<=14);
+   const D=od-d, F=P*GG, dl=8*F*D**3*(N-2)/(Gg*1e3*d**4)*1000/1000;
+   const dlmm=8*F*(D/1000)**3*(N-2)/(Gg*1e9*(d/1000)**4)*1000;
+   return {q:`A helical spring with squared and ground ends has ${N} total coils and a modulus of rigidity of ${Gg} GPa. The outside diameter is ${od} mm and the wire diameter is ${R.f(d,3)} mm. Compute the deflection caused by a load of ${P} kg.`,
+     ans:dlmm, unit:"mm", sig:3,
+     wrong:{"counted every coil as active":8*F*(D/1000)**3*N/(Gg*1e9*(d/1000)**4)*1000,"used the outside diameter as D":8*F*(od/1000)**3*(N-2)/(Gg*1e9*(d/1000)**4)*1000,"forgot g (used kg as N)":dlmm/GG},
+     sol:`Squared and ground ends: active coils = ${N} − 2 = ${N-2}\nD = OD − d = ${R.f(D,4)} mm; P = ${P}(9.81) = ${R.f(F)} N\nδ = 8PD³N/(Gd⁴) = ${R.f(dlmm,4)} mm`};
+ }},
+ {key:"sp-rate", topic:"fasteners", name:"Spring rate", make:R=>{
+   const w=R.one(WIRES), d=w[0], od=R.v(0.5,2.5,0.125), N=R.v(5,25,1), D=od-d, C=D/d;
+   R.need(C>=5 && C<=16);
+   const k=12e6*d**4/(8*D**3*N);
+   return {q:`A helical compression spring is made of ${w[1]} wire and has an outside diameter of ${od} in with ${N} active coils. Find the spring constant. Use G = 12 × 10⁶ psi.`, ans:k, unit:"lb/in", sig:3,
+     wrong:{"used the outside diameter as D":12e6*d**4/(8*od**3*N),"used N − 2 coils":12e6*d**4/(8*D**3*(N-2)),"used the wire radius in place of d":12e6*(d/2)**4/(8*D**3*N)},
+     sol:`D = OD − d = ${od} − ${d} = ${R.f(D,4)} in\nk = Gd⁴/(8D³N) = 12 × 10⁶(${d})⁴/[8(${R.f(D,4)})³(${N})] = ${R.f(k,4)} lb/in`};
+ }},
+ {key:"sp-stress", topic:"fasteners", name:"Spring shear stress (Wahl)", make:R=>{
+   const w=R.one(WIRES), d=w[0], D=R.v(0.5,2.5,0.125), P=R.v(20,400,10), C=D/d;
+   R.need(C>=5 && C<=14);
+   const K=gw(C), t=K*8*P*D/(GPI*d**3);
+   return {q:`A helical spring made of ${w[1]} wire has a mean coil diameter of ${D} in. Using the Wahl factor, find the maximum shearing stress when it carries ${P} lb.`, ans:t, unit:"psi", sig:3,
+     wrong:{"left out the Wahl factor":8*P*D/(GPI*d**3),"used the Bergsträsser factor":gb(C)*8*P*D/(GPI*d**3),"used the shear factor 1 + 0.5/C":(1+0.5/C)*8*P*D/(GPI*d**3)},
+     sol:`C = D/d = ${R.f(C,4)}; K_w = (4C − 1)/(4C − 4) + 0.615/C = ${R.f(K,4)}\nτ = K·8PD/(πd³) = ${R.f(t)} psi`};
+ }},
+ {key:"sp-wahl", topic:"fasteners", name:"Wahl factor", make:R=>{
+   const od=R.v(30,110,1), d=R.v(4,12,0.5), D=od-d, C=D/d; R.need(C>=4.5 && C<=16);
+   const K=gw(C);
+   return {q:`A helical spring has an outside diameter of ${od} mm and a wire diameter of ${d} mm. Determine its Wahl factor.`, ans:K, unit:"", sig:4,
+     wrong:{"used the outside diameter as D":gw(od/d),"gave the Bergsträsser factor":gb(C),"left out the 0.615/C term":(4*C-1)/(4*C-4),"gave the shear factor 1 + 0.5/C":1+0.5/C},
+     sol:`D = OD − d = ${R.f(D,4)} mm; C = D/d = ${R.f(C,4)}\nK = (4C − 1)/(4C − 4) + 0.615/C = ${R.f(K,4)}`};
+ }},
+ {key:"sp-series", topic:"fasteners", name:"Springs in series", make:R=>{
+   const a=R.v(10,80,5), b=R.v(10,120,5), c=R.v(10,100,5), three=R.one([false,true]), P=R.v(100,800,50);
+   const k=1/(1/a+1/b+(three?1/c:0)), dl=P/k;
+   return {q:`${three?"Three springs":"Two springs"} with rates of ${a} lb/in, ${b} lb/in${three?` and ${c} lb/in`:""} are connected in series. What total deflection does a load of ${P} lb produce?`, ans:dl, unit:"in", sig:3,
+     wrong:{"added the rates (parallel)":P/(a+b+(three?c:0)),"used the stiffest spring only":P/Math.max(a,b,three?c:0),"averaged the rates":P/((a+b+(three?c:0))/(three?3:2))},
+     sol:`1/k = 1/${a} + 1/${b}${three?` + 1/${c}`:""} → k = ${R.f(k,4)} lb/in\nδ = P/k = ${P}/${R.f(k,4)} = ${R.f(dl,4)} in`};
+ }},
+ {key:"sp-parallel", topic:"fasteners", name:"Springs in parallel", make:R=>{
+   const n=R.one([2,3,4]), k=R.v(10,100,5), P=R.v(200,2000,50);
+   return {q:`${n} identical springs, each with a rate of ${k} N/mm, share a load of ${P} N in parallel. Find the deflection.`, ans:P/(n*k), unit:"mm", sig:3,
+     wrong:{"used one spring only":P/k,"multiplied by n instead of dividing":n*P/k,"divided the load but not the rate":P/n/k*1},
+     sol:`k = ${n}(${k}) = ${n*k} N/mm\nδ = P/k = ${P}/${n*k} = ${R.f(P/(n*k),4)} mm`};
+ }},
+ {key:"sp-energy", topic:"fasteners", name:"Work to stretch a spring", make:R=>{
+   const k=R.v(2,30,1), l0=R.v(40,150,5), a=R.v(10,60,5), b=R.v(70,160,5); R.need(b>a+10);
+   const W=0.5*k*1000*(((l0+b)-l0)**2-((l0+a)-l0)**2)/1e6;
+   return {q:`A spring with a free length of ${l0} mm and a stiffness of ${k} kN/m is stretched from a length of ${l0+a} mm to ${l0+b} mm. Find the work done.`, ans:W, unit:"J", sig:3,
+     wrong:{"measured from zero length instead of the free length":0.5*k*1000*((l0+b)**2-(l0+a)**2)/1e6,"used ½k(Δx)² with Δx = l₂ − l₁":0.5*k*1000*((b-a)/1000)**2,"used the final force times Δx":k*1000*(b/1000)*((b-a)/1000)},
+     sol:`x₁ = ${a} mm, x₂ = ${b} mm (beyond the free length)\nW = ½k(x₂² − x₁²) = ½(${k*1000})(${(b/1000)**2} − ${(a/1000)**2}) = ${R.f(W,4)} J`};
+ }},
+ {key:"sp-turns", topic:"fasteners", name:"Turns for a given rate", make:R=>{
+   const w=R.one(WIRES.slice(1,8)), d=w[0], C=R.v(5,12,1), k=R.v(8,60,2), N=11.5e6*d/(8*C**3*k); R.need(N>=3);
+   return {q:`A helical spring of ${w[1]} wire with a spring index of ${C} must have a rate of ${k} lb/in. How many active turns are needed? Use G = 11.5 × 10⁶ psi.`, ans:Math.round(N), int:true,
+     wrong:{"used C² in place of C³":Math.round(11.5e6*d/(8*C**2*k)),"used D in place of d":Math.round(11.5e6*d*C/(8*C**3*k)),"used G = 12 × 10⁶ and added 2 end coils":Math.round(12e6*d/(8*C**3*k)+2)},
+     sol:`N = Gd/(8C³k) = 11.5 × 10⁶(${d})/[8(${C})³(${k})] = ${R.f(N,4)} → ${Math.round(N)} active coils`};
+ }},
+ {key:"sp-wire", topic:"fasteners", name:"Wire size for allowable stress", make:R=>{
+   const P=R.v(40,300,10), C=R.v(5,10,1), S=R.v(40,120,5);
+   const d=Math.sqrt(gb(C)*8*P*C/(GPI*S*1000));
+   return {q:`A helical spring must carry ${P} lb with a spring index of ${C}. Using the Bergsträsser factor and an allowable shearing stress of ${S} ksi, find the wire diameter.`, ans:d, unit:"in", sig:3,
+     wrong:{"used the Wahl factor":Math.sqrt(gw(C)*8*P*C/(GPI*S*1000)),"left out the stress factor":Math.sqrt(8*P*C/(GPI*S*1000)),"gave the mean diameter":C*d},
+     sol:`K_b = (4C + 2)/(4C − 3) = ${R.f(gb(C),4)}\nτ = K_b·8PC/(πd²) → d = √[K_b·8PC/(πτ)] = ${R.f(d,4)} in`};
+ }},
+ {key:"sp-freq", topic:"fasteners", name:"Spring–mass frequency", make:R=>{
+   const m=R.v(0.5,20,0.5), k=R.v(100,5000,50), f=Math.sqrt(k/m)/(2*GPI);
+   return {q:`A ${m} kg mass hangs from a spring whose rate is ${k} N/m. What is the natural frequency of vertical vibration?`, ans:f, unit:"Hz", sig:3,
+     wrong:{"gave ω = √(k/m)":Math.sqrt(k/m),"gave the period 1/f":1/f,"forgot the 2π":Math.sqrt(k/m)/2,"swapped m and k":Math.sqrt(m/k)/(2*GPI)},
+     sol:`f = (1/2π)√(k/m) = (1/2π)√(${k}/${m}) = ${R.f(f,4)} Hz`};
+ }},
+ {key:"sp-load", topic:"fasteners", name:"Load for a given stress", make:R=>{
+   const w=R.one(WIRES.slice(0,7)), d=w[0], D=R.v(0.5,2.5,0.125), S=R.v(60,140,4), C=D/d; R.need(C>=5 && C<=14);
+   const K=gw(C), P=S*1000*GPI*d**3/(8*D*K);
+   return {q:`A helical spring of ${w[1]} wire has a mean diameter of ${D} in. What load produces a maximum shearing stress of ${S} ksi? Use the Wahl factor.`, ans:P, unit:"lb", sig:3,
+     wrong:{"left out the Wahl factor":S*1000*GPI*d**3/(8*D),"used the Bergsträsser factor":S*1000*GPI*d**3/(8*D*gb(C)),"used the factor in the wrong place (multiplied)":S*1000*GPI*d**3*K/(8*D)},
+     sol:`C = D/d = ${R.f(C,4)}; K = ${R.f(K,4)}\nP = τπd³/(8DK) = ${S*1000}π(${d})³/[8(${D})(${R.f(K,4)})] = ${R.f(P,4)} lb`};
+ }},
+ // ---------------- brakes ----------------
+ {key:"br-slack", topic:"bearings", name:"Band brake slack-side tension", make:R=>{
+   const D=R.v(300,900,10), w=R.v(40,150,5), p=R.v(0.4,2,0.1), f=R.v(0.15,0.4,0.01), th=R.v(180,330,10);
+   const T1=p*1e6*(w/1000)*(D/2000), e=Math.exp(f*th*GPI/180), T2=T1/e;
+   return {q:`A band brake has a drum ${D} mm in diameter and a band ${w} mm wide. The coefficient of friction is ${f}, the angle of wrap is ${th}° and the maximum lining pressure is ${p} MPa. Find the tension on the slack side.`, ans:T2/1000, unit:"kN", sig:3,
+     wrong:{"gave the tight-side tension":T1/1000,"gave T₁ − T₂":(T1-T2)/1000,"used the diameter in place of the radius":2*T1/e/1000},
+     sol:`T₁ = pwr = ${p} × 10⁶(${w/1000})(${D/2000}) = ${R.f(T1/1000)} kN\ne^(fθ) = e^(${f} × ${R.f(th*GPI/180,4)}) = ${R.f(e,4)}\nT₂ = T₁/e^(fθ) = ${R.f(T2/1000)} kN`};
+ }},
+ {key:"br-torque", topic:"bearings", name:"Band brake torque", make:R=>{
+   const D=R.v(300,900,10), w=R.v(40,150,5), p=R.v(0.4,2,0.1), f=R.v(0.15,0.4,0.01), th=R.v(180,330,10);
+   const r=D/2000, T1=p*1e6*(w/1000)*r, e=Math.exp(f*th*GPI/180), T2=T1/e, T=(T1-T2)*r;
+   return {q:`A band brake has a drum ${D} mm in diameter and a band ${w} mm wide. The coefficient of friction is ${f}, the angle of wrap is ${th}° and the maximum lining pressure is ${p} MPa. What braking torque can it develop?`, ans:T, unit:"N·m", sig:3,
+     wrong:{"used T₁ only":T1*r,"used T₁ + T₂":(T1+T2)*r,"used the diameter as the arm":(T1-T2)*D/1000},
+     sol:`T₁ = pwr = ${R.f(T1/1000)} kN; T₂ = T₁/e^(fθ) = ${R.f(T2/1000)} kN\nT = (T₁ − T₂)r = ${R.f(T)} N·m`};
+ }},
+ {key:"br-lever", topic:"bearings", name:"Band brake lever force", make:R=>{
+   const D=R.v(300,700,10), f=R.v(0.2,0.4,0.01), th=R.v(200,330,10), T=R.v(300,2500,50), a=R.v(30,100,5), L=R.v(500,1100,50);
+   const r=D/2000, e=Math.exp(f*th*GPI/180), T2=T/r/(e-1), T1=T2*e, F=T2*a/L;
+   return {q:`A simple band brake has a drum ${D} mm in diameter with f = ${f} and ${th}° of contact. The slack end of the band is attached to the lever ${a} mm from the fulcrum and the tight end to the fixed frame. The lever is ${L} mm long. What force at the end of the lever is needed for a braking torque of ${T} N·m?`, ans:F, unit:"N", sig:3,
+     wrong:{"used the tight-side tension":T1*a/L,"used T₁ − T₂":(T1-T2)*a/L,"used L/a instead of a/L":T2*L/a},
+     sol:`T₁ − T₂ = T/r = ${R.f(T/r)} N; T₁/T₂ = e^(fθ) = ${R.f(e,4)}\nT₂ = ${R.f(T2)} N\nF·L = T₂·a → F = ${R.f(T2)}(${a})/${L} = ${R.f(F)} N`};
+ }},
+ {key:"br-stop-time", topic:"bearings", name:"Time to stop a rotating wheel", make:R=>{
+   const m=R.v(50,400,10), k=R.v(0.2,0.6,0.02), N=R.v(300,1800,50), T=R.v(100,800,10);
+   const I=m*k*k, w=N*2*GPI/60, t=I*w/T;
+   return {q:`A wheel of mass ${m} kg and radius of gyration ${k} m spins at ${N} rpm. A brake applies a constant torque of ${T} N·m. How long does it take to stop?`, ans:t, unit:"s", sig:3,
+     wrong:{"used rpm instead of rad/s":I*N/T,"treated it as a solid disk (½mk²)":t/2,"used the diameter for k":I*4*w/T},
+     sol:`I = mk² = ${m}(${k})² = ${R.f(I)} kg·m²; ω = ${N}(2π)/60 = ${R.f(w,4)} rad/s\nt = Iω/T = ${R.f(t)} s`};
+ }},
+ {key:"br-energy", topic:"bearings", name:"Energy absorbed by a brake", make:R=>{
+   const m=R.v(50,400,10), k=R.v(0.2,0.6,0.02), N1=R.v(600,2400,50), N2=R.v(0,500,50); R.need(N1>N2+200);
+   const I=m*k*k, E=0.5*I*((N1*2*GPI/60)**2-(N2*2*GPI/60)**2)/1000;
+   return {q:`A brake slows a wheel of mass ${m} kg and radius of gyration ${k} m from ${N1} rpm to ${N2===0?"rest":N2+" rpm"}. How much energy must the brake absorb?`, ans:E, unit:"kJ", sig:3,
+     wrong:{"used rpm instead of rad/s":0.5*I*(N1*N1-N2*N2)/1000,"left out the ½":2*E,"subtracted the speeds before squaring":0.5*I*((N1-N2)*2*GPI/60)**2/1000},
+     sol:`I = mk² = ${R.f(I)} kg·m²\nE = ½I(ω₁² − ω₂²) = ½(${R.f(I)})[(${R.f(N1*2*GPI/60,4)})² − (${R.f(N2*2*GPI/60,4)})²] = ${R.f(E)} kJ`};
+ }},
+ // ---------------- flywheels & punching ----------------
+ {key:"fw-accel", topic:"flywheels", name:"Torque to accelerate a flywheel", make:R=>{
+   const D=R.v(0.6,2.4,0.1), m=R.v(100,1200,50), a=R.v(20,300,10);
+   const I=0.5*m*(D/2)**2, al=a*2*GPI/60, T=I*al;
+   return {q:`A solid disk flywheel ${D} m in diameter with a mass of ${m} kg is brought up to speed with an angular acceleration of ${a} rev/min per second. What torque is required?`, ans:T, unit:"N·m", sig:3,
+     wrong:{"treated it as a ring (mr²)":2*T,"gave only the moment of inertia":I,"used rev/min per second as rad/s²":I*a},
+     sol:`I = ½mr² = ½(${m})(${R.f(D/2,4)})² = ${R.f(I)} kg·m²\nα = ${a}(2π)/60 = ${R.f(al,4)} rad/s²\nT = Iα = ${R.f(T)} N·m`};
+ }},
+ {key:"fw-energy", topic:"flywheels", name:"Energy given up by a flywheel", make:R=>{
+   const m=R.v(100,900,10), r=R.v(0.2,0.8,0.025), w1=R.v(2,8,0.1), w2=R.v(1.5,7.5,0.1); R.need(w2<w1-0.3);
+   const E=0.5*m*r*r*((2*GPI*w1)**2-(2*GPI*w2)**2);
+   return {q:`A flywheel with a thin rim of mass ${m} kg and radius ${r} m slows from ${w1} rev/s to ${w2} rev/s. How much energy does it give up? (Treat all the mass as being on the rim.)`, ans:E/1000, unit:"kJ", sig:3,
+     wrong:{"treated it as a solid disk":E/2000,"used rev/s instead of rad/s":0.5*m*r*r*(w1*w1-w2*w2)/1000,"forgot the ½":2*E/1000},
+     sol:`I = mr² = ${m}(${r})² = ${R.f(m*r*r)} kg·m²\nΔE = ½I(ω₁² − ω₂²) = ½(${R.f(m*r*r)})[(2π·${w1})² − (2π·${w2})²] = ${R.f(E/1000)} kJ`};
+ }},
+ {key:"fw-rim", topic:"flywheels", name:"Rim weight for a fluctuation limit", make:R=>{
+   const D=R.v(2,8,0.5), E=R.v(800,6000,50), N=R.v(100,800,10), C=R.v(0.02,0.1,0.01), pc=R.one([5,10,15,20]);
+   const v=GPI*D*N/60, We=E*32.2/(C*v*v), W=We/(1+pc/100);
+   return {q:`A flywheel with a mean diameter of ${D} ft must handle ${E} ft-lb of kinetic energy fluctuation at ${N} rpm. The coefficient of fluctuation is ${C}. Find the rim weight if the arms and hub are equivalent to ${pc}% of the rim weight.`, ans:W, unit:"lb", sig:3,
+     wrong:{"forgot the arms and hub":We,"added the arms and hub the wrong way":We*(1+pc/100),"used the radius for the rim speed":E*32.2/(C*(v/2)**2)/(1+pc/100)},
+     sol:`v = πDN/60 = ${R.f(v,4)} ft/s\nW_eff = ΔE·g/(C_f v²) = ${R.f(We)} lb = ${1+pc/100} W_rim\nW_rim = ${R.f(W)} lb`};
+ }},
+ {key:"fw-stress", topic:"flywheels", name:"Rim stress from speed", make:R=>{
+   const D=R.v(0.5,3,0.05), N=R.v(200,1800,50), rho=R.one([[7200,"cast iron"],[7850,"steel"],[2700,"aluminum"]]);
+   const v=GPI*D*N/60, s=rho[0]*v*v/1e6;
+   return {q:`The rim of a ${rho[1]} flywheel (density ${rho[0]} kg/m³) has a mean diameter of ${D} m and turns at ${N} rpm. What tensile stress does centrifugal force produce in the rim (σ = ρv²)?`, ans:s, unit:"MPa", sig:3,
+     wrong:{"used the radius for the rim speed":s/4,"left Pa unconverted (gave kPa)":s*1000,"forgot to square v":rho[0]*v/1e6},
+     sol:`v = πDN/60 = ${R.f(v,4)} m/s\nσ = ρv² = ${rho[0]}(${R.f(v,4)})² = ${R.f(s*1e6)} Pa = ${R.f(s)} MPa`};
+ }},
+ {key:"fw-rev", topic:"flywheels", name:"Revolutions from rest", make:R=>{
+   const a=R.v(1,15,1), t=R.v(2,12,1), th=0.5*a*t*t;
+   return {q:`A flywheel starting from rest accelerates uniformly at ${a} rad/s². How many revolutions does it make in ${t} seconds?`, ans:th/(2*GPI), unit:"rev", sig:3,
+     wrong:{"gave the angle in radians":th,"forgot the ½":a*t*t/(2*GPI),"used ω = αt":a*t/(2*GPI)},
+     sol:`θ = ½αt² = ½(${a})(${t})² = ${R.f(th)} rad = ${R.f(th/(2*GPI),4)} rev`};
+ }},
+ {key:"fw-punch", topic:"flywheels", name:"Punching force", make:R=>{
+   const d=R.v(8,40,1), t=R.v(3,20,1), S=R.one([[350,"steel"],[300,"brass"],[250,"mild steel"],[180,"aluminum"]]);
+   const F=S[0]*GPI*d*t/1000;
+   return {q:`What force is needed to punch a ${d} mm hole through ${t} mm thick ${S[1]} plate whose ultimate shearing strength is ${S[0]} MPa?`, ans:F, unit:"kN", sig:3,
+     wrong:{"used the area of the hole":S[0]*GPI/4*d*d/1000,"used the radius instead of the diameter":F/2,"used 2πdt":2*F},
+     sol:`Sheared area = πdt = π(${d})(${t}) = ${R.f(GPI*d*t,4)} mm²\nF = τ_u·A = ${S[0]}(${R.f(GPI*d*t,4)}) = ${R.f(F*1000)} N = ${R.f(F)} kN`};
+ }},
+ {key:"fw-holes", topic:"flywheels", name:"Holes punched at once", make:R=>{
+   const F=R.v(20,120,5), S=R.v(30,80,5), d=R.one([[0.25,"1/4"],[0.3125,"5/16"],[0.375,"3/8"]]), t=R.one([[0.375,"3/8"],[0.4375,"7/16"],[0.5,"1/2"]]);
+   const n=F*2000/(S*1000*GPI*d[0]*t[0]); R.need(Math.floor(n)>=2);
+   return {q:`A press of ${F} tons capacity punches ${d[1]} in holes through ${t[1]} in plate with an ultimate shearing strength of ${S} ksi. What is the greatest number of holes it can punch at one stroke?`, ans:Math.floor(n), int:true,
+     wrong:{"rounded up":Math.ceil(n)+(n%1===0?1:0),"used the hole area instead of the sheared area":Math.floor(F*2000/(S*1000*GPI/4*d[0]**2)),"forgot to convert tons to lb":Math.max(1,Math.floor(n/2000))},
+     sol:`Shear area per hole = πdt = π(${d[1]})(${t[1]}) = ${R.f(GPI*d[0]*t[0],4)} in²\nForce per hole = ${S*1000}(${R.f(GPI*d[0]*t[0],4)}) = ${R.f(S*1000*GPI*d[0]*t[0])} lb\nHoles = ${F*2000}/${R.f(S*1000*GPI*d[0]*t[0])} = ${R.f(n,4)} → ${Math.floor(n)}`};
+ }}
+];
+
+const makeGen = (g,seed)=>make(g.make,{q:"",choices:[""],ans:0},seed,false);
+return {make, makeGen, gens:GENS, template, f, fs, sci, sig, psat, tsat, RETRY};
 })();
 </script>
 
@@ -721,6 +899,7 @@ function initState(){
     order: ["shuffle","source","new","missed"].includes(c.order) ? c.order : "shuffle",
     shuffle: c.shuffle!==false,
     vary: c.vary===true,
+    gen: c.gen===true,
     modeBy: {}
   };
   TESTS.forEach(t=>{ const m=c.modeBy&&c.modeBy[t.id]; cfg.modeBy[t.id] = (m==="exam"||m==="inst") ? m : (t.feedback==="exam"?"exam":"inst"); });
@@ -729,6 +908,7 @@ function initState(){
   if(known.size) TOPICS.forEach(t=>{ if(!known.has(t.id) && !cfg.topics.includes(t.id)) cfg.topics.push(t.id); });
   cfg.known = TOPICS.map(t=>t.id);
   session = LS.get(K.sess);
+  if(session && session.genItems && typeof session.genItems==='object') for(const gid in session.genItems){ const g=session.genItems[gid]; if(g && g.id===gid && !Q[gid]) Q[gid]=g; }
   if(session && (!Array.isArray(session.ids) || !session.ids.length || session.ids.some(id=>!Q[id]))) session = null;
   saveCfg();
 }
@@ -814,17 +994,38 @@ function buildQuiz(){
   }
   return ids.slice(0, cfg.len==="all" ? ids.length : cfg.len);
 }
+// Generated mode: whole new problems built from the templates in the vary engine
+const genTemplates = ()=>((VARY&&VARY.gens)||[]).filter(g=>TOPIC[g.topic] && cfg.topics.includes(g.topic));
+function buildGen(){
+  const tpls = genTemplates(); if(!tpls.length) return [];
+  const n = cfg.len==="all" ? Math.max(25,tpls.length) : cfg.len;
+  const out = []; let bag = [];
+  let guard = 0;
+  while(out.length<n && guard++<n*6){
+    if(!bag.length) bag = shuffle(tpls.slice());
+    const g = bag.pop();
+    try{
+      const v = VARY.makeGen(g, (Math.random()*4294967296)>>>0);
+      const id = "gen:"+g.key+":"+Math.random().toString(36).slice(2,9);
+      Q[id] = {id, tests:[cfg.test], test:cfg.test, topic:g.topic, kind:"problem", q:v.q, choices:v.choices, ans:v.ans, sol:v.sol, why:v.why, fig:"", source:"Generated", sources:["Generated"], also:[], no:"", file:"", fixed:false, demo:false, gen:true};
+      out.push(id);
+    }catch(e){}
+  }
+  return out;
+}
 function startSession(ids, opts){
   const o = Object.assign({mode:cfg.modeBy[cfg.test], test:cfg.test, kind:cfg.kind, demo:false, shuffle:cfg.shuffle, vary:cfg.vary}, opts||{});
   const perm = {}, vr = {};
   if(o.vary && !o.demo) ids.forEach(id=>{ const v=makeVariant(id); if(v) vr[id]=v; });
+  ids.forEach(id=>{ if(Q[id].gen) vr[id]={q:Q[id].q, choices:Q[id].choices, ans:Q[id].ans, sol:Q[id].sol, why:Q[id].why}; });
   ids.forEach(id=>{ perm[id] = (o.shuffle && (vr[id] || !Q[id].fixed)) ? shuffle([0,1,2,3]) : [0,1,2,3]; });
   session = {ids, perm, ans:{}, i:0, mode:o.mode, test:o.test, kind:o.kind, demo:o.demo, shuffle:o.shuffle, elapsed:0, vary:!!(o.vary && !o.demo), var:vr};
+  const gi={}; ids.forEach(id=>{ if(Q[id].gen) gi[id]=Q[id]; }); if(Object.keys(gi).length){ session.genItems=gi; session.vary=true; }
   ui.quitAsk=false; ui.submitAsk=false;
   saveSession(); view="quiz"; render(); window.scrollTo(0,0);
 }
 function recordAnswer(id, orig){
-  if(Q[id].demo) return;
+  if(Q[id].demo || Q[id].gen) return;
   const r = progress.s[id] || [0,0,0], ok = orig===ansOf(id) ? 1 : 0;
   progress.s[id] = [r[0]+1, r[1]+ok, ok];
 }
@@ -849,7 +1050,7 @@ function finish(early){
   const scored = early ? answered : s.ids.slice();
   const correct = scored.filter(id=>s.ans[id]===ansOf(id)).length;
   if(!s.demo){
-    progress.h.unshift({t:Date.now(), n:scored.length, c:correct, test:s.test, kind:s.kind, tp:[...new Set(scored.map(id=>Q[id].topic))], x:s.mode, ms:s.elapsed, v:s.vary&&Object.keys(s.var||{}).length?1:0});
+    progress.h.unshift({t:Date.now(), n:scored.length, c:correct, test:s.test, kind:s.kind, tp:[...new Set(scored.map(id=>Q[id].topic))], x:s.mode, ms:s.elapsed, v:s.genItems?2:(s.vary&&Object.keys(s.var||{}).length?1:0)});
     progress.h = progress.h.slice(0,30);
   }
   saveProgress();
@@ -876,7 +1077,8 @@ function renderHome(){
   const T = TEST[cfg.test];
   const probN = pool.filter(id=>Q[id].kind==="problem").length;
   const varN = pool.filter(id=>genFor(id)).length;
-  const varOn = cfg.vary && varN>0;
+  const varOn = cfg.vary && !cfg.gen && varN>0;
+  const genN = genTemplates().length;
 
   let hint = "";
   if(!cfg.topics.length) hint = "Pick at least one topic.";
@@ -950,8 +1152,8 @@ function renderHome(){
   <section class="section" aria-labelledby="h-setup">
     <div class="section-head"><h2 id="h-setup"><span class="stepno">4</span>Set up</h2><span class="muted num" style="font-size:13px">${plural(pool.length,"item")} in pool</span></div>
     <div class="setup">
-      <div class="row"><span class="lbl" id="l-var">Variation</span><div><div class="seg" role="group" aria-labelledby="l-var"><button data-vary="0" aria-pressed="${!cfg.vary}">Off · as printed</button><button data-vary="1" aria-pressed="${cfg.vary}">On · new values<small>${varN}</small></button></div>
-        <p class="hint">${cfg.vary ? (varN ? `Each problem gets new given values and new choices every time you start, solved the same way. The answer is computed and the wrong choices come from common mistakes. ${varN} of ${plural(probN,"problem")} in this pool can vary; the rest stay as printed.` : "None of the problems in this pool can vary yet, so items stay as printed.") : "Items appear exactly as printed in your sources."}</p></div></div>
+      <div class="row"><span class="lbl" id="l-var">Variation</span><div><div class="seg" role="group" aria-labelledby="l-var"><button data-vary="0" aria-pressed="${!cfg.vary && !cfg.gen}">Off · as printed</button><button data-vary="1" aria-pressed="${cfg.vary && !cfg.gen}">On · new values<small>${varN}</small></button><button data-vary="2" aria-pressed="${cfg.gen}">Generated<small>${genN}</small></button></div>
+        <p class="hint">${cfg.gen ? (genN ? `The app writes brand-new problems from ${plural(genN,"template")} in your topics: new situation, new numbers, answer computed, wrong choices from common mistakes, with a full solution. Your printed items aren't used, and generated questions don't count toward your progress record.` : "No generated question types cover the topics you picked yet. Pick Fasteners & Springs, Bearings & Brakes or Flywheels & Punching.") : cfg.vary ? (varN ? `Each problem gets new given values and new choices every time you start, solved the same way. The answer is computed and the wrong choices come from common mistakes. ${varN} of ${plural(probN,"problem")} in this pool can vary; the rest stay as printed.` : "None of the problems in this pool can vary yet, so items stay as printed.") : "Items appear exactly as printed in your sources."}</p></div></div>
       <div class="row"><span class="lbl" id="l-src">Source</span><div>${allSrcs.length ? `<div class="seg" role="group" aria-labelledby="l-src"><button data-ssubj="all" aria-pressed="${subjSel==="all"}">All sources</button>${SUBJECTS.map(sj=>{ const has=sourcesFor(cfg.test, sj.id).length; return `<button data-ssubj="${esc(sj.id)}" aria-pressed="${subjSel===sj.id}" title="${esc(sj.name||"")}"${has?"":" disabled"}>${esc(subjTag(sj.id))}${has?`<small>${pick(base({subj:sj.id, src:"all"})).length}</small>`:""}</button>`; }).join("")}</div>${subjSel!=="all" ? `<div class="seg sub" role="group" aria-label="${esc(subjTag(subjSel))} sources by review center"><button data-src="all" aria-pressed="${src==="all"}">All ${esc(subjTag(subjSel))}</button>${GROUP_NAMES.map(g=>{ const has=srcs.some(s=>groupOf(s)===g); return `<button data-grp="${esc(g)}" aria-pressed="${curGroup()===g}"${has?"":" disabled"}>${esc(g)}${has?`<small>${pick(base({src:"g:"+g})).length}</small>`:""}</button>`; }).join("")}</div>` : ""}${curGroup() ? `<div class="seg sub l3" role="group" aria-label="${esc(curGroup())} ${esc(subjTag(subjSel))} sources"><button data-grp="${esc(curGroup())}" aria-pressed="${src==="g:"+curGroup()}">All ${esc(curGroup())} · ${esc(subjTag(subjSel))}</button>${srcs.map((s,i)=>groupOf(s)===curGroup() ? `<button data-srci="${i}" aria-pressed="${src===s}" title="${esc(srcLabel(s))}">${esc(shortSrc(s))}<small>${pick(base({src:s})).length}</small></button>` : "").join("")}</div>` : ""}` : `<p class="hint" style="margin:0">None added yet. Each bank file names its own source.</p>`}</div></div>
       <div class="row"><span class="lbl" id="l-len">Length</span><div class="seg" role="group" aria-labelledby="l-len">${LENS.map(l=>`<button data-len="${l}" aria-pressed="${cfg.len===l}">${l==="all"?`All<small>${pool.length}</small>`:l}</button>`).join("")}</div></div>
       <div class="row"><span class="lbl" id="l-ord">Order</span><div><div class="seg" role="group" aria-labelledby="l-ord">${[["shuffle","Shuffled"],["source","Source order"],["new","New first"],["missed","Missed only"]].map(([k,t])=>`<button data-order="${k}" aria-pressed="${cfg.order===k}">${t}${k==="missed"?`<small>${missedN}</small>`:""}</button>`).join("")}</div>
@@ -961,13 +1163,13 @@ function renderHome(){
       <div class="row"><span class="lbl" id="l-shuf">Choices</span><div><div class="seg" role="group" aria-labelledby="l-shuf"><button data-shuf="1" aria-pressed="${cfg.shuffle}">Shuffle A–D</button><button data-shuf="0" aria-pressed="${!cfg.shuffle}">Keep as written</button></div>
         <p class="hint">${cfg.shuffle?"Letters move around so you learn the answer, not its position. Items with “all of the above” stay as written.":"Choices appear in the same A–D order as your source."}</p></div></div>
     </div>
-    <button class="primary" data-act="start" ${n && cfg.topics.length?"":"disabled"}>${n && cfg.topics.length ? `Start ${T.name} · ${plural(n,"item")}${varOn?" · new values":""}` : `Start ${T.name}`}</button>
+    <button class="primary" data-act="start" ${cfg.gen ? (genN?"":"disabled") : (n && cfg.topics.length?"":"disabled")}>${cfg.gen ? (genN ? `Start ${T.name} · ${plural(cfg.len==="all"?Math.max(25,genN):cfg.len,"generated question")}` : `Start ${T.name}`) : (n && cfg.topics.length ? `Start ${T.name} · ${plural(n,"item")}${varOn?" · new values":""}` : `Start ${T.name}`)}</button>
     ${hint?`<p class="hint" style="text-align:center">${hint}</p>`:""}
   </section>
 
   ${progress.h.length ? `<section class="section" aria-labelledby="h-hist"><div class="section-head"><h2 id="h-hist">Recent tests</h2></div>
     <div class="history">${progress.h.slice(0,6).map(h=>{ const p=h.n?Math.round(100*h.c/h.n):0; const tn=TEST[h.test]?TEST[h.test].name:"Test"; const tps=(h.tp||[]).map(id=>TOPIC[id]?TOPIC[id].name:"").filter(Boolean);
-      return `<div class="h"><span class="t">${esc(tn)} · ${esc(KIND[h.kind]||"Mixed")}${h.v?" · new values":""}</span><span class="d">${fmtDate(h.t)} · ${esc(tps.length>2?`${tps.length} topics`:tps.join(", "))}</span><span class="sc"><span class="pill ${band(p)}">${p}%</span><div class="num muted" style="font-size:12px">${h.c}/${h.n}</div></span></div>`; }).join("")}</div></section>` : ""}
+      return `<div class="h"><span class="t">${esc(tn)} · ${esc(KIND[h.kind]||"Mixed")}${h.v===2?" · generated":h.v?" · new values":""}</span><span class="d">${fmtDate(h.t)} · ${esc(tps.length>2?`${tps.length} topics`:tps.join(", "))}</span><span class="sc"><span class="pill ${band(p)}">${p}%</span><div class="num muted" style="font-size:12px">${h.c}/${h.n}</div></span></div>`; }).join("")}</div></section>` : ""}
 
   <footer class="foot"><span>${IS_OFFLINE ? "Offline copy · progress is saved in this browser." : "Progress is saved in this browser."}</span>
     <span class="confirm">${total && DEMO.length ? `<button class="ghost" data-act="demo">Demo quiz</button>` : ""}
@@ -1138,14 +1340,14 @@ app.addEventListener("click", e=>{
   if(d.order){ cfg.order=d.order; saveCfg(); return render(); }
   if(d.mode){ cfg.modeBy[cfg.test]=d.mode; saveCfg(); return render(); }
   if(d.shuf){ cfg.shuffle = d.shuf==="1"; saveCfg(); return render(); }
-  if(d.vary){ cfg.vary = d.vary==="1"; saveCfg(); return render(); }
+  if(d.vary){ cfg.gen = d.vary==="2"; cfg.vary = d.vary==="1"; saveCfg(); return render(); }
   if(d.pick!=null) return choose(+d.pick);
   if(d.jump!=null) return go(+d.jump);
   if(d.rev){ ui.reviewAll = d.rev==="all"; return render(); }
   switch(d.act){
     case "all": cfg.topics=TOPICS.map(t=>t.id); saveCfg(); return render();
     case "none": cfg.topics=[]; saveCfg(); return render();
-    case "start": { const ids=buildQuiz(); if(ids.length) startSession(ids); return; }
+    case "start": { if(cfg.gen){ const ids=buildGen(); if(ids.length) startSession(ids,{vary:false}); return; } const ids=buildQuiz(); if(ids.length) startSession(ids); return; }
     case "demo": return startSession(shuffle(DEMO.slice()), {mode:"inst", demo:true, kind:"mixed", test:Q[DEMO[0]].test, shuffle:true});
     case "resume": view="quiz"; render(); window.scrollTo(0,0); return;
     case "discard": session=null; saveSession(); return render();
