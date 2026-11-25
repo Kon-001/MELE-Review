@@ -773,6 +773,8 @@ if(!CFG || !Array.isArray(CFG.tests) || !CFG.tests.length || !Array.isArray(CFG.
 
 /* ---------- Settings ---------- */
 const TESTS = CFG.tests, TEST = {};  TESTS.forEach(t=>TEST[t.id]=t);
+// Shaftings is merged into Keys: one topic, "Shafting, Keys, Splines and Couplings" (id stays "keys"; a bank that says topic: "shafts" is filed there too)
+CFG.topics = CFG.topics.filter(t=>t && t.id!=="shafts").map(t=>t.id==="keys" ? Object.assign({}, t, {name:"Shafting, Keys, Splines and Couplings"}) : t);
 const TOPICS = CFG.topics.filter(t=>t && t.id), TOPIC = {}; TOPICS.forEach(t=>TOPIC[t.id]=t);
 const SUBJECTS = (CFG.subjects||[]).slice();
 if(TOPICS.some(t=>!SUBJECTS.find(s=>s.id===t.subject))) SUBJECTS.push({id:"__other", short:"Other", name:"Other topics"});
@@ -810,6 +812,7 @@ function addItem(raw, defaults, idx, isDemo){
   const tests = it.test==="all" ? TESTS.map(t=>t.id) : (Array.isArray(it.test) ? it.test : [it.test]).map(String);
   const badTest = tests.find(t=>!TEST[t]);
   if(!tests.length || badTest!==undefined) return bad(`unknown test "${badTest}". Use one of: ${TESTS.map(t=>t.id).join(", ")}, or "all"`);
+  if(it.topic==="shafts") it.topic = "keys";
   if(!TOPIC[it.topic]) return bad(`unknown topic "${it.topic}". Add it to config.js or fix the spelling`);
   if(it.kind!=="problem" && it.kind!=="concept") return bad(`kind must be "problem" or "concept"`);
   if(!Array.isArray(it.choices) || it.choices.length!==4 || it.choices.some(c=>c==null || String(c).trim()==="")) return bad("needs exactly 4 choices (A to D)");
